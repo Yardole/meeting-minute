@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -233,7 +234,8 @@ private fun MinutesTab(meeting: Meeting?, summary: String?) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(bottom = 72.dp)
         ) {
             item {
                 Text(
@@ -304,7 +306,8 @@ private fun TranscriptTab(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 16.dp),
+        contentPadding = PaddingValues(bottom = 72.dp)
     ) {
         itemsIndexed(segments) { _, segment ->
             Column(modifier = Modifier.padding(vertical = 8.dp)) {
@@ -365,7 +368,11 @@ private fun ChatTab(
     onInputChanged: (String) -> Unit,
     onSend: () -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 72.dp) // clear the floating tab bar
+    ) {
         if (messages.isEmpty()) {
             Box(
                 modifier = Modifier
