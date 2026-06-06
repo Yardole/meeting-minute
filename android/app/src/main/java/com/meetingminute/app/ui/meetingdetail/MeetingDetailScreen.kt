@@ -583,28 +583,34 @@ private fun ChatBubble(
             ),
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
         )
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(
-                    topStart = 16.dp,
-                    topEnd = 16.dp,
-                    bottomStart = if (isUser) 16.dp else 4.dp,
-                    bottomEnd = if (isUser) 4.dp else 16.dp
-                ))
-                .background(
-                    if (isUser) MaterialTheme.colorScheme.surfaceVariant
-                    else MaterialTheme.colorScheme.primary
+        if (isUser) {
+            // User: olive bubble with tail bottom-right
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(
+                        topStart = 16.dp, topEnd = 16.dp,
+                        bottomStart = 16.dp, bottomEnd = 4.dp
+                    ))
+                    .background(MaterialTheme.colorScheme.primary)
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
+            ) {
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontSize = 13.sp, lineHeight = 20.sp
+                    )
                 )
-                .padding(horizontal = 14.dp, vertical = 10.dp)
-        ) {
+            }
+        } else {
+            // Oliva: no bubble, just text on the page
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    color = if (isUser) MaterialTheme.colorScheme.onSurface
-                    else MaterialTheme.colorScheme.onPrimary,
-                    fontSize = 13.sp,
-                    lineHeight = 20.sp
-                )
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = 13.sp, lineHeight = 20.sp
+                ),
+                modifier = Modifier.padding(horizontal = 2.dp, vertical = 4.dp)
             )
         }
     }
