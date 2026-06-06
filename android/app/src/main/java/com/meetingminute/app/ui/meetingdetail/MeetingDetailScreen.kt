@@ -386,9 +386,10 @@ private fun TranscriptTab(
                         Text(
                             text = segment.speakerName,
                             style = MaterialTheme.typography.labelLarge.copy(
+                                fontFamily = com.meetingminute.app.ui.theme.Fraunces,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 12.sp
+                                fontSize = 13.sp
                             )
                         )
                         Text(
