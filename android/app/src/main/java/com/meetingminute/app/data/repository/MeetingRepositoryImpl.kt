@@ -348,8 +348,12 @@ class MeetingRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateSpeaker(speaker: Speaker) {
-        val entities = database.speakerDao().observeByMeetingId(speaker.meetingId)
-        // Find and update the speaker entity
+        // Get the old label before the rename
+        val oldSpeaker = database.speakerDao().getByMeetingId(speaker.meetingId)
+            .find { it.id == speaker.id }
+        val oldLabel = oldSpeaker?.label ?: return
+
+        // Update the speaker entity
         val speakerEntity = SpeakerEntity(
             id = speaker.id,
             meetingId = speaker.meetingId,
@@ -359,6 +363,18 @@ class MeetingRepositoryImpl @Inject constructor(
             updatedAt = Instant.now()
         )
         database.speakerDao().update(speakerEntity)
+
+        // Update summary text — replace old label with new name (no API call)
+        val newName = speaker.name ?: speaker.label
+        database.summaryDao().getByMeetingId(speaker.meetingId)?.let { summaryEntity ->
+            val updatedContent = summaryEntity.content.replace(oldLabel, newName)
+            if (updatedContent != summaryEntity.content) {
+                database.summaryDao().update(
+                    summaryEntity.copy(content = updatedContent, updatedAt = Instant.now())
+                )
+                Log.d("MeetingRepo", "Summary updated: $oldLabel → $newName")
+            }
+        }
     }
 
     override suspend fun getTranscriptText(meetingId: UUID): String {

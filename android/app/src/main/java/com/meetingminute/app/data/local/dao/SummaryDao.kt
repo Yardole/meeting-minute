@@ -14,6 +14,9 @@ interface SummaryDao {
     @Query("SELECT * FROM summaries WHERE meetingId = :meetingId AND deletedAt IS NULL")
     fun observeByMeetingId(meetingId: UUID): Flow<SummaryEntity?>
 
+    @Query("SELECT * FROM summaries WHERE meetingId = :meetingId AND deletedAt IS NULL")
+    suspend fun getByMeetingId(meetingId: UUID): SummaryEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(summary: SummaryEntity)
 
