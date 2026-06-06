@@ -505,8 +505,8 @@ private fun ChatTab(
                 singleLine = true,
                 shape = RoundedCornerShape(20.dp),
                 colors = TextFieldDefaults.colors(
-                    focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                    unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
                 )
             )
             Spacer(modifier = Modifier.width(8.dp))
