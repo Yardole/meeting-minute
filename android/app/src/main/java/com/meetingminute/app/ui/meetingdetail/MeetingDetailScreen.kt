@@ -134,7 +134,7 @@ fun MeetingDetailScreen(
                     .fillMaxWidth()
                     .padding(
                         horizontal = 16.dp,
-                        vertical = if (isLandscape) 8.dp else 16.dp
+                        vertical = if (isLandscape) 6.dp else 8.dp
                     ),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
@@ -163,7 +163,7 @@ fun MeetingDetailScreen(
                 ),
                 modifier = Modifier.padding(
                     horizontal = 16.dp,
-                    vertical = if (isLandscape) 2.dp else 4.dp
+                    vertical = if (isLandscape) 1.dp else 2.dp
                 )
             )
 
