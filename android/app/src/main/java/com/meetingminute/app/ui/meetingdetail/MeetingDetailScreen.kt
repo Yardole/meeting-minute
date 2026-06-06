@@ -588,8 +588,8 @@ private fun ChatBubble(
                 .clip(RoundedCornerShape(
                     topStart = 16.dp,
                     topEnd = 16.dp,
-                    bottomStart = if (isUser) 4.dp else 16.dp,
-                    bottomEnd = if (isUser) 16.dp else 4.dp
+                    bottomStart = if (isUser) 16.dp else 4.dp,
+                    bottomEnd = if (isUser) 4.dp else 16.dp
                 ))
                 .background(
                     if (isUser) MaterialTheme.colorScheme.surfaceVariant
