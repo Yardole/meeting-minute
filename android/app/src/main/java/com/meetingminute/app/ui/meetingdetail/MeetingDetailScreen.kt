@@ -577,8 +577,9 @@ private fun ChatBubble(
         Text(
             text = roleLabel,
             style = MaterialTheme.typography.labelSmall.copy(
+                fontFamily = if (!isUser) com.meetingminute.app.ui.theme.Fraunces else null,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 10.sp,
+                fontSize = if (!isUser) 12.sp else 10.sp,
                 fontWeight = FontWeight.SemiBold
             ),
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
@@ -603,13 +604,12 @@ private fun ChatBubble(
                 )
             }
         } else {
-            // Oliva: no bubble, Fraunces serif text on the page
+            // Oliva: no bubble, just text on the page
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontFamily = com.meetingminute.app.ui.theme.Fraunces,
                     color = MaterialTheme.colorScheme.onBackground,
-                    fontSize = 14.sp, lineHeight = 22.sp
+                    fontSize = 13.sp, lineHeight = 20.sp
                 ),
                 modifier = Modifier.padding(horizontal = 2.dp, vertical = 4.dp)
             )
