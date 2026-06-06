@@ -55,7 +55,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.unit.IntOffset
@@ -173,47 +172,16 @@ fun MeetingDetailScreen(
                 )
             }
 
-            // Editable title
-            var editingTitle by remember { mutableStateOf(false) }
-            var titleText by remember { mutableStateOf("") }
-            val titleFontSize = if (isLandscape) 18.sp else 22.sp
-            val titleVPadding = if (isLandscape) 1.dp else 2.dp
-
-            if (editingTitle) {
-                BasicTextField(
-                    value = titleText,
-                    onValueChange = { titleText = it },
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.headlineLarge.copy(
-                        fontSize = titleFontSize,
-                        color = MaterialTheme.colorScheme.onBackground
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = titleVPadding)
-                        .onFocusChanged { focusState ->
-                            if (!focusState.isFocused) {
-                                if (titleText.isNotBlank()) {
-                                    viewModel.updateTitle(titleText)
-                                }
-                                editingTitle = false
-                            }
-                        }
+            Text(
+                text = meeting?.title ?: "Meeting",
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    fontSize = if (isLandscape) 18.sp else 22.sp
+                ),
+                modifier = Modifier.padding(
+                    horizontal = 16.dp,
+                    vertical = if (isLandscape) 1.dp else 2.dp
                 )
-            } else {
-                Text(
-                    text = meeting?.title ?: "Meeting",
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontSize = titleFontSize
-                    ),
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = titleVPadding)
-                        .clickable {
-                            titleText = meeting?.title ?: ""
-                            editingTitle = true
-                        }
-                )
-            }
+            )
 
             if (isLandscape) {
                 // Landscape: player on left, tabs + content on right

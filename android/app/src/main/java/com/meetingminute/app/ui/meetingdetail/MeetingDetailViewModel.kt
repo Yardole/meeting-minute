@@ -96,14 +96,6 @@ class MeetingDetailViewModel @Inject constructor(
         }
     }
 
-    fun updateTitle(newTitle: String) {
-        viewModelScope.launch {
-            meeting.value?.let { m ->
-                meetingRepository.updateMeeting(m.copy(title = newTitle))
-            }
-        }
-    }
-
     fun renameSpeaker(speakerId: UUID, newName: String) {
         viewModelScope.launch {
             val speaker = speakers.value.find { it.id == speakerId } ?: return@launch
