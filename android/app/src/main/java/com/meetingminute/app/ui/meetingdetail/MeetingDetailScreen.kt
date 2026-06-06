@@ -577,9 +577,9 @@ private fun ChatBubble(
         Text(
             text = roleLabel,
             style = MaterialTheme.typography.labelSmall.copy(
-                fontFamily = if (!isUser) com.meetingminute.app.ui.theme.Fraunces else null,
+                fontFamily = com.meetingminute.app.ui.theme.Fraunces,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = if (!isUser) 12.sp else 10.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.SemiBold
             ),
             modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
