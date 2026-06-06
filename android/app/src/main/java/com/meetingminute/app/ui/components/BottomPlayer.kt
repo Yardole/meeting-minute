@@ -17,8 +17,6 @@ import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
-import androidx.compose.material.icons.outlined.Flag
-import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -147,30 +145,6 @@ fun BottomPlayer(
                     contentDescription = "Skip forward 10s",
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(22.dp)
-                )
-            }
-
-            IconButton(
-                onClick = { },
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Flag,
-                    contentDescription = "Bookmark",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
-
-            IconButton(
-                onClick = { },
-                modifier = Modifier.size(40.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Timer,
-                    contentDescription = "Sleep timer",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
                 )
             }
         }
