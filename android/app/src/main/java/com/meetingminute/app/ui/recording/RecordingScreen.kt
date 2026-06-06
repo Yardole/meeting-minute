@@ -59,12 +59,27 @@ fun RecordingScreen(
     val processingStatus by viewModel.processingStatus.collectAsState()
     val processingProgress by viewModel.processingProgress.collectAsState()
     val navigateToMeetingId by viewModel.navigateToMeetingId.collectAsState()
+    val tooShort by viewModel.tooShort.collectAsState()
 
     // Auto-navigate when processing completes
     LaunchedEffect(navigateToMeetingId) {
         navigateToMeetingId?.let { id ->
             viewModel.onNavigated()
             onNavigateToMeeting(id)
+        }
+    }
+
+    // Show toast for too-short recordings and go back
+    val context = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(tooShort) {
+        if (tooShort) {
+            android.widget.Toast.makeText(
+                context,
+                "Recording too short — at least 10 seconds needed",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+            delay(600)
+            onNavigateHome()
         }
     }
 
