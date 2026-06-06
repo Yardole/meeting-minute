@@ -451,14 +451,12 @@ private fun ChatTab(
     onSend: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        // Message area wrapped in a rounded card
+        // Message area — blends into the page background
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 4.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 4.dp)
         ) {
             if (messages.isEmpty()) {
                 Box(
