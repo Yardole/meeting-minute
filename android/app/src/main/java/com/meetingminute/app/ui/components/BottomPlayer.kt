@@ -160,19 +160,15 @@ fun BottomPlayer(
                 }
 
                 // Center: play/pause
-                Box(
-                    modifier = Modifier
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                        .clickable(onClick = onPlayPause),
-                    contentAlignment = Alignment.Center
+                IconButton(
+                    onClick = onPlayPause,
+                    modifier = Modifier.size(44.dp)
                 ) {
                     Icon(
                         imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                         contentDescription = if (isPlaying) "Pause" else "Play",
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(24.dp)
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(28.dp)
                     )
                 }
 
