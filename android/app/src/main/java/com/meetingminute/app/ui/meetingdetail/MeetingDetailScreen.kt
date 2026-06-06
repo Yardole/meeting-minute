@@ -38,8 +38,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
-import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -484,17 +483,16 @@ private fun ChatTab(
             } else {
                 val listState = rememberLazyListState()
 
-                LaunchedEffect(Unit) {
-                    snapshotFlow { messages.size }
-                        .drop(1) // skip initial value to avoid scrolling on tab switch
-                        .collect { size ->
-                            if (size > 0) {
-                                val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-                                if (lastVisible >= size - 3) {
-                                    listState.animateScrollToItem(size - 1)
-                                }
-                            }
+                LaunchedEffect(messages.size) {
+                    if (messages.isNotEmpty()) {
+                        // Brief delay to let LazyColumn measure after snapshot
+                        delay(50)
+                        val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+                        // Scroll if near bottom, or if list hasn't laid out yet (first load)
+                        if (lastVisible >= messages.size - 3 || lastVisible == -1) {
+                            listState.animateScrollToItem(messages.size - 1)
                         }
+                    }
                 }
 
                 LazyColumn(
