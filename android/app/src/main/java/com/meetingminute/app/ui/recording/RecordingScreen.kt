@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 @OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
 @Composable
@@ -62,18 +63,12 @@ fun RecordingScreen(
     val tooShort by viewModel.tooShort.collectAsState()
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
-    // Haptic: recording started — tri-pulse rhythm × 3
+    // Haptic: one pulse per ripple wave — every 700ms while recording
     LaunchedEffect(isRecording) {
         if (isRecording) {
-            repeat(3) {
-                // duk duk duk (< 1s)
+            while (isActive) {
                 haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                delay(200)
-                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                delay(200)
-                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                // rest 2s between groups
-                if (it < 2) delay(2000)
+                delay(700)
             }
         }
     }
