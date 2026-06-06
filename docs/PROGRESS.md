@@ -1,0 +1,114 @@
+# Progress Log
+
+## 2026-06-07
+
+### Done
+
+**M3 — Summary [x]**
+- [x] `summarize` Edge Function wired to DeepSeek (was stub)
+- [x] Structured JSON response: title, content, key_points
+- [x] AI-generated meeting titles (e.g. "Q3 Marketing Budget Reallocation")
+- [x] Summary saved to Room + Supabase
+- [x] Summary auto-replaces speaker labels on rename (string replace, zero API cost)
+- [x] Minutes tab shows summary with Fraunces titles
+
+**M4 — Chat [x]**
+- [x] `chat` Edge Function wired to DeepSeek (was stub)
+- [x] Transcript context + chat history passed as system prompt
+- [x] Oliva persona in prompts ("You are Oliva, a helpful meeting assistant")
+- [x] Chat tab: floating input bar, inline send button as trailing icon
+- [x] Chat auto-scrolls to new messages (only when near bottom)
+- [x] Chat bubble styling: user olive bubble with tail, Oliva plain text
+- [x] Chat message area blends into page (no card background)
+
+**M5 — Sync [x]**
+- [x] `sync` Edge Function: bidirectional sync with updated_at comparison
+- [x] Last-write-wins conflict resolution, soft-delete propagation
+- [x] SyncManager: collects local data, calls sync, applies merged data
+- [x] Exponential backoff retry (3 attempts)
+- [x] Sync triggers on app launch
+
+**Design System — Warm Editorial [x]**
+- [x] Color palette: warm paper (#FBF7F0), olive accent (#6E7A45), warm ink (#2A241E)
+- [x] Typography: Fraunces (serif titles) + DM Sans (body/UI) bundled as variable fonts
+- [x] App renamed to "Oliva." (with period)
+- [x] Speaker names in Fraunces, Oliva/You labels in Fraunces
+- [x] Slide-left/right page transitions (450ms, FastOutSlowIn)
+- [x] Animated tab indicator — olive pill slides between tabs with spring physics
+- [x] Edge-to-edge layout: content behind system bars with subtle scrim gradients
+- [x] Compose BOM 2026.05.01, AGP 8.7.3, Gradle 8.11.1, Kotlin 2.0.21
+
+**Recording UX [x]**
+- [x] Shared element transition: mic FAB morphs into recording button
+- [x] Square stop icon (rounded corners)
+- [x] Ripple waves emanating from recording button
+- [x] Processing screen: stays on recording screen with live status + progress bar
+- [x] "Process in background" button after 5 seconds
+- [x] Auto-navigate to meeting detail when processing completes
+- [x] Gate: recordings under 10s rejected with toast
+- [x] Tri-pulse haptic rhythm on recording start (first 5s only)
+- [x] Ripple-synced haptic pulse every 700ms (first 5s)
+
+**Audio Player [x]**
+- [x] Player moved from bottom bar to under title
+- [x] Controls wrapped in rounded card
+- [x] Play/pause dead center with equal-weight side groups
+- [x] Tap + drag to seek on progress bar (24dp touch target)
+- [x] Play/pause icon transparent (no filled circle)
+
+**Navigation & Layout [x]**
+- [x] Floating tab bar pill at bottom → moved tabs inline between player and content
+- [x] Tabs centered, then moved to bottom → then moved back inline
+- [x] Landscape mode: player left (vertically centered), tabs+content right
+- [x] Compact header in landscape
+
+**Haptics [x]**
+- [x] Record start/stop, processing complete
+- [x] Play/pause toggle, send chat message
+- [x] Swipe to delete, tap timestamp to seek
+- [x] Tab switch, speaker rename saved
+- [x] Edge-scroll bump when hitting top/bottom of any list
+
+**Infrastructure [x]**
+- [x] `SupabaseEdgeFunctionClient`: shared HTTP client for all Edge Functions
+- [x] SupabaseConfig injected via DI (no hardcoded keys)
+- [x] processRecording(): repository-scoped pipeline that survives navigation
+- [x] ProfileEntity gained deletedAt field
+- [x] All DAOs: getAllForSync() + deleteAll() methods
+- [x] Database fallbackToDestructiveMigration
+- [x] All Edge Functions deployed with --no-verify-jwt
+
+### In Progress
+
+- [ ] `feat/morph-progress-ring`: circle morphs into progress bar (stashed, needs work)
+
+### Commits
+
+```
+f282883 feat: subtle fade gradients at top and bottom for edge-to-edge
+2a702e3 fix: chat list accounts for navigation bar in bottom padding
+eb86fbc feat: edge-to-edge layout + latest Compose/AGP/Gradle
+98ff970 fix: tiny bump in chat bottom padding (80→88dp)
+81accda fix: increase chat bottom padding so last message clears input
+230e48b fix: rename app to Oliva. (with period)
+382a9e9 fix: nudge chat input field 4dp lower
+3be7733 fix: revert bottom padding on chat input
+520a404 fix: increase bottom padding on chat input for keyboard gap
+ce34301 fix: remove imePadding, add small bottom padding instead
+fe03f24 fix: add imePadding for gap between input field and keyboard
+a8fc53a fix: revert to full-width field with trailing send button
+329a01f feat: send button inline with text in a single pill
+2013165 fix: narrow chat message column horizontally
+2c6e7df feat: send button inside the input field as trailing icon
+e783e05 fix: remove focus indicator from chat input field
+c28dd5f fix: send button muted olive instead of grey
+20c613b fix: chat input fully transparent — no background bar
+1b5a60d fix: play/pause button transparent — icon floats clean
+2bcceb7 feat: floating chat input bar over scrolling messages
+7d979d8 feat: auto-replace speaker labels in summary on rename
+d44b0d5 fix: speaker names in Fraunces font
+93d1794 fix: use pointerInput instead of clickable to eliminate ripple
+7e442f4 fix: remove ripple indication from tab clicks
+cd5acc0 feat: animated tab indicator — pill slides between tabs
+... and ~20 more before that
+```
