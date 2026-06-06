@@ -63,10 +63,11 @@ fun RecordingScreen(
     val tooShort by viewModel.tooShort.collectAsState()
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
-    // Haptic: one pulse per ripple wave — every 700ms while recording
+    // Haptic: one pulse per ripple wave — first 5 seconds of recording
     LaunchedEffect(isRecording) {
         if (isRecording) {
-            while (isActive) {
+            val start = System.currentTimeMillis()
+            while (isActive && System.currentTimeMillis() - start < 5_000) {
                 haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
                 delay(700)
             }
