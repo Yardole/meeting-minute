@@ -588,20 +588,20 @@ private fun ChatBubble(
                 .clip(RoundedCornerShape(
                     topStart = 16.dp,
                     topEnd = 16.dp,
-                    bottomStart = if (isUser) 16.dp else 4.dp,
-                    bottomEnd = if (isUser) 4.dp else 16.dp
+                    bottomStart = if (isUser) 4.dp else 16.dp,
+                    bottomEnd = if (isUser) 16.dp else 4.dp
                 ))
                 .background(
-                    if (isUser) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.surfaceVariant
+                    if (isUser) MaterialTheme.colorScheme.surfaceVariant
+                    else MaterialTheme.colorScheme.primary
                 )
                 .padding(horizontal = 14.dp, vertical = 10.dp)
         ) {
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    color = if (isUser) MaterialTheme.colorScheme.onPrimary
-                    else MaterialTheme.colorScheme.onSurface,
+                    color = if (isUser) MaterialTheme.colorScheme.onSurface
+                    else MaterialTheme.colorScheme.onPrimary,
                     fontSize = 13.sp,
                     lineHeight = 20.sp
                 )
