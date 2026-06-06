@@ -32,6 +32,9 @@ fun AppNavigation(navController: NavHostController) {
                 onNavigateToMeeting = { meetingId ->
                     navController.popBackStack()
                     navController.navigate(Screen.MeetingDetail.createRoute(meetingId))
+                },
+                onNavigateHome = {
+                    navController.popBackStack()
                 }
             )
         }

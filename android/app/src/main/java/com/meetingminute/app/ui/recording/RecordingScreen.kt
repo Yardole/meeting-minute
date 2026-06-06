@@ -43,10 +43,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun RecordingScreen(
     onNavigateToMeeting: (String) -> Unit,
+    onNavigateHome: () -> Unit,
     viewModel: RecordingViewModel = hiltViewModel()
 ) {
     val elapsedMs by viewModel.elapsedMs.collectAsState()
@@ -66,7 +68,8 @@ fun RecordingScreen(
     if (processingStatus.isNotEmpty()) {
         ProcessingScreen(
             status = processingStatus,
-            progress = processingProgress
+            progress = processingProgress,
+            onNavigateHome = onNavigateHome
         )
     } else {
         RecordingActiveScreen(
@@ -80,7 +83,8 @@ fun RecordingScreen(
 @Composable
 private fun ProcessingScreen(
     status: String,
-    progress: Float
+    progress: Float,
+    onNavigateHome: () -> Unit
 ) {
     val dots = listOf(
         rememberInfiniteTransition(label = "dot1").let { transition ->
@@ -106,6 +110,14 @@ private fun ProcessingScreen(
         },
     )
 
+    // Show "Process in background" after 5 seconds
+    var showBackgroundButton by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        delay(5_000)
+        showBackgroundButton = true
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -116,64 +128,75 @@ private fun ProcessingScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Status card
-            Box(
-                modifier = Modifier
-                    .padding(horizontal = 40.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(32.dp),
-                contentAlignment = Alignment.Center
+            // Animated dots — no card, directly on the paper background
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    // Animated dots
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        dots.forEach { alpha ->
-                            Box(
-                                modifier = Modifier
-                                    .size(8.dp)
-                                    .clip(CircleShape)
-                                    .background(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = alpha.value)
-                                    )
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Text(
-                        text = status,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 16.sp,
-                            textAlign = TextAlign.Center
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Subtle progress track
+                dots.forEach { alpha ->
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(3.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(MaterialTheme.colorScheme.outline)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(progress)
-                                .height(3.dp)
-                                .clip(RoundedCornerShape(2.dp))
-                                .background(MaterialTheme.colorScheme.primary)
-                        )
-                    }
+                            .size(8.dp)
+                            .clip(CircleShape)
+                            .background(
+                                MaterialTheme.colorScheme.primary.copy(alpha = alpha.value)
+                            )
+                    )
                 }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Text(
+                text = status,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 16.sp,
+                    textAlign = TextAlign.Center
+                ),
+                color = MaterialTheme.colorScheme.onBackground
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Subtle progress track
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 80.dp)
+                    .fillMaxWidth()
+                    .height(3.dp)
+                    .clip(RoundedCornerShape(2.dp))
+                    .background(MaterialTheme.colorScheme.outline)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(progress)
+                        .height(3.dp)
+                        .clip(RoundedCornerShape(2.dp))
+                        .background(MaterialTheme.colorScheme.primary)
+                )
+            }
+        }
+
+        // "Process in background" button at bottom — fades in after 5s
+        if (showBackgroundButton) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(MaterialTheme.colorScheme.secondaryContainer)
+                    .clickable { onNavigateHome() }
+                    .padding(horizontal = 24.dp, vertical = 14.dp)
+            ) {
+                Text(
+                    text = "Process in background",
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    ),
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
+                )
             }
         }
     }
