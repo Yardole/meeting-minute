@@ -122,10 +122,18 @@ fun MeetingDetailScreen(
                 .padding(padding)
                 .statusBarsPadding()
         ) {
+            val isLandscape =
+                androidx.compose.ui.platform.LocalConfiguration.current.orientation ==
+                    android.content.res.Configuration.ORIENTATION_LANDSCAPE
+
+            // Header — more compact in landscape
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
+                    .padding(
+                        horizontal = 16.dp,
+                        vertical = if (isLandscape) 8.dp else 16.dp
+                    ),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -148,13 +156,14 @@ fun MeetingDetailScreen(
 
             Text(
                 text = meeting?.title ?: "Meeting",
-                style = MaterialTheme.typography.headlineLarge.copy(fontSize = 22.sp),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                style = MaterialTheme.typography.headlineLarge.copy(
+                    fontSize = if (isLandscape) 18.sp else 22.sp
+                ),
+                modifier = Modifier.padding(
+                    horizontal = 16.dp,
+                    vertical = if (isLandscape) 2.dp else 4.dp
+                )
             )
-
-            val isLandscape =
-                androidx.compose.ui.platform.LocalConfiguration.current.orientation ==
-                    android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
             if (isLandscape) {
                 // Landscape: player on left, tabs + content on right
