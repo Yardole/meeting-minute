@@ -62,14 +62,18 @@ fun RecordingScreen(
     val tooShort by viewModel.tooShort.collectAsState()
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
-    // Haptic: recording started — heartbeat pulse for first 3 seconds
+    // Haptic: recording started — tri-pulse rhythm × 3
     LaunchedEffect(isRecording) {
         if (isRecording) {
-            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-            // Sync haptic pulses to the 800ms visual pulse for ~3s
-            repeat(4) {
-                delay(800)
+            repeat(3) {
+                // duk duk duk
                 haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                delay(180)
+                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                delay(180)
+                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                // pause between groups
+                if (it < 2) delay(500)
             }
         }
     }
