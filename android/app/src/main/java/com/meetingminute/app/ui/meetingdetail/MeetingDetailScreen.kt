@@ -430,68 +430,65 @@ private fun ChatTab(
     onInputChanged: (String) -> Unit,
     onSend: () -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize()) {
         val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-        // Message area — blends into the page background
-        Box(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp)
-        ) {
-            if (messages.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "Ask questions about this meeting.",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+
+        // Message area — scrolls fully behind the input bar
+        if (messages.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Ask questions about this meeting.",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
-            } else {
-                val listState = rememberLazyListState()
-                EdgeScrollHaptics(listState, haptic)
+                )
+            }
+        } else {
+            val listState = rememberLazyListState()
+            EdgeScrollHaptics(listState, haptic)
 
-                LaunchedEffect(messages.size) {
-                    if (messages.isNotEmpty()) {
-                        // Brief delay to let LazyColumn measure after snapshot
-                        delay(50)
-                        val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-                        // Scroll if near bottom, or if list hasn't laid out yet (first load)
-                        if (lastVisible >= messages.size - 3 || lastVisible == -1) {
-                            listState.animateScrollToItem(messages.size - 1)
-                        }
+            LaunchedEffect(messages.size) {
+                if (messages.isNotEmpty()) {
+                    delay(50)
+                    val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+                    if (lastVisible >= messages.size - 3 || lastVisible == -1) {
+                        listState.animateScrollToItem(messages.size - 1)
                     }
                 }
+            }
 
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 4.dp),
-                    contentPadding = PaddingValues(vertical = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(messages.size) { index ->
-                        val (role, content) = messages[index]
-                        val isUser = role == ChatRole.USER
-                        ChatBubble(
-                            message = content,
-                            isUser = isUser,
-                            roleLabel = if (isUser) "You" else "Oliva"
-                        )
-                    }
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 4.dp),
+                contentPadding = PaddingValues(
+                    top = 12.dp,
+                    bottom = 68.dp // clears the floating input bar
+                ),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(messages.size) { index ->
+                    val (role, content) = messages[index]
+                    val isUser = role == ChatRole.USER
+                    ChatBubble(
+                        message = content,
+                        isUser = isUser,
+                        roleLabel = if (isUser) "You" else "Oliva"
+                    )
                 }
             }
         }
 
-        // Input bar — blends into the page
+        // Input bar — floats on top of the scrolling content
         Row(
             modifier = Modifier
+                .align(Alignment.BottomCenter)
                 .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.92f))
                 .padding(horizontal = 12.dp, vertical = 8.dp)
                 .navigationBarsPadding(),
             verticalAlignment = Alignment.CenterVertically
