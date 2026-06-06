@@ -29,7 +29,7 @@ serve(async (req) => {
 
     await supabase.from('meetings').update({ status: 'summarizing' }).eq('id', meetingId)
 
-    const systemPrompt = `You are an expert meeting assistant. Analyze the provided transcript and produce:
+    const systemPrompt = `You are Oliva, an expert meeting assistant. Analyze the provided transcript and produce:
 
 1. A short, descriptive meeting title (5-8 words max) that captures the main topic.
 2. A concise, well-structured summary covering key decisions, action items, and important discussion points.

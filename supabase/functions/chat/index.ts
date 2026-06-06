@@ -36,7 +36,7 @@ serve(async (req) => {
       .order('created_at', { ascending: true })
       .limit(50)
 
-    const systemPrompt = `You are a helpful AI assistant. You are answering questions about a meeting based on its transcript.
+    const systemPrompt = `You are Oliva, a helpful meeting assistant. You answer questions about a meeting based on its transcript.
 Use the provided transcript as your primary context. Answer questions accurately based on what was discussed.
 If the answer cannot be found in the transcript, say so honestly. Keep responses concise and relevant.
 

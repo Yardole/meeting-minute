@@ -493,7 +493,7 @@ private fun ChatTab(
                         ChatBubble(
                             message = content,
                             isUser = isUser,
-                            roleLabel = if (isUser) "You" else "AI"
+                            roleLabel = if (isUser) "You" else "Oliva"
                         )
                     }
                 }
