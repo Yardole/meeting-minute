@@ -13,11 +13,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,16 +37,152 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun RecordingScreen(
-    onStop: () -> Unit,
+    onNavigateToMeeting: (String) -> Unit,
     viewModel: RecordingViewModel = hiltViewModel()
 ) {
     val elapsedMs by viewModel.elapsedMs.collectAsState()
+    val isRecording by viewModel.isRecording.collectAsState()
+    val processingStatus by viewModel.processingStatus.collectAsState()
+    val processingProgress by viewModel.processingProgress.collectAsState()
+    val navigateToMeetingId by viewModel.navigateToMeetingId.collectAsState()
+
+    // Auto-navigate when processing completes
+    LaunchedEffect(navigateToMeetingId) {
+        navigateToMeetingId?.let { id ->
+            viewModel.onNavigated()
+            onNavigateToMeeting(id)
+        }
+    }
+
+    if (processingStatus.isNotEmpty()) {
+        ProcessingScreen(
+            status = processingStatus,
+            progress = processingProgress
+        )
+    } else {
+        RecordingActiveScreen(
+            elapsedMs = elapsedMs,
+            onStartRecording = { viewModel.startRecording() },
+            onStopRecording = { viewModel.stopRecording() }
+        )
+    }
+}
+
+@Composable
+private fun ProcessingScreen(
+    status: String,
+    progress: Float
+) {
+    val dots = listOf(
+        rememberInfiniteTransition(label = "dot1").let { transition ->
+            transition.animateFloat(
+                initialValue = 0.3f, targetValue = 1f,
+                animationSpec = infiniteRepeatable(tween(900), RepeatMode.Reverse),
+                label = "alpha1"
+            )
+        },
+        rememberInfiniteTransition(label = "dot2").let { transition ->
+            transition.animateFloat(
+                initialValue = 0.3f, targetValue = 1f,
+                animationSpec = infiniteRepeatable(tween(900, delayMillis = 300), RepeatMode.Reverse),
+                label = "alpha2"
+            )
+        },
+        rememberInfiniteTransition(label = "dot3").let { transition ->
+            transition.animateFloat(
+                initialValue = 0.3f, targetValue = 1f,
+                animationSpec = infiniteRepeatable(tween(900, delayMillis = 600), RepeatMode.Reverse),
+                label = "alpha3"
+            )
+        },
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // Status card
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 40.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    // Animated dots
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        dots.forEach { alpha ->
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .clip(CircleShape)
+                                    .background(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = alpha.value)
+                                    )
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Text(
+                        text = status,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 16.sp,
+                            textAlign = TextAlign.Center
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Subtle progress track
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(3.dp)
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(MaterialTheme.colorScheme.outline)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth(progress)
+                                .height(3.dp)
+                                .clip(RoundedCornerShape(2.dp))
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecordingActiveScreen(
+    elapsedMs: Long,
+    onStartRecording: () -> Unit,
+    onStopRecording: () -> Unit
+) {
     var hasPermission by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -56,7 +197,7 @@ fun RecordingScreen(
 
     LaunchedEffect(hasPermission) {
         if (hasPermission) {
-            viewModel.startRecording()
+            onStartRecording()
         }
     }
 
@@ -102,14 +243,14 @@ fun RecordingScreen(
                     .scale(pulseScale)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.error)
-                    .clickable { viewModel.stopRecording { onStop() } },
+                    .clickable { onStopRecording() },
                 contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
                         .size(38.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.onBackground)
+                        .background(MaterialTheme.colorScheme.background)
                 )
             }
 

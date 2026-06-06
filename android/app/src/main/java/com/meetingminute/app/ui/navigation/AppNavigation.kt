@@ -29,8 +29,9 @@ fun AppNavigation(navController: NavHostController) {
         }
         composable(Screen.Recording.route) {
             RecordingScreen(
-                onStop = {
+                onNavigateToMeeting = { meetingId ->
                     navController.popBackStack()
+                    navController.navigate(Screen.MeetingDetail.createRoute(meetingId))
                 }
             )
         }
