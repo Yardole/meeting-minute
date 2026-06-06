@@ -11,8 +11,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -36,6 +40,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import kotlinx.coroutines.delay
@@ -43,6 +48,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -197,36 +206,11 @@ fun MeetingDetailScreen(
 
                     // Right: tabs + content
                     Column(modifier = Modifier.weight(0.6f)) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            tabs.forEachIndexed { index, title ->
-                                val isActive = index == selectedTab
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(16.dp))
-                                        .background(
-                                            if (isActive) MaterialTheme.colorScheme.primary
-                                            else Color.Transparent
-                                        )
-                                        .clickable { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove); selectedTab = index }
-                                        .padding(horizontal = 14.dp, vertical = 6.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        text = title,
-                                        style = MaterialTheme.typography.labelLarge.copy(
-                                            color = if (isActive) MaterialTheme.colorScheme.onPrimary
-                                            else MaterialTheme.colorScheme.onSurfaceVariant,
-                                            fontSize = 13.sp
-                                        )
-                                    )
-                                }
-                            }
-                        }
+                        AnimatedTabRow(
+                            selectedIndex = selectedTab,
+                            tabs = tabs,
+                            onTabClick = { selectedTab = it }
+                        )
 
                         when (selectedTab) {
                             0 -> MinutesTab(meeting, summary)
@@ -266,36 +250,11 @@ fun MeetingDetailScreen(
                 }
                 )
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    tabs.forEachIndexed { index, title ->
-                        val isActive = index == selectedTab
-                        Box(
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(16.dp))
-                                .background(
-                                    if (isActive) MaterialTheme.colorScheme.primary
-                                    else Color.Transparent
-                                )
-                                .clickable { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove); selectedTab = index }
-                                .padding(horizontal = 14.dp, vertical = 6.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = title,
-                                style = MaterialTheme.typography.labelLarge.copy(
-                                    color = if (isActive) MaterialTheme.colorScheme.onPrimary
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 13.sp
-                                )
-                            )
-                        }
-                    }
-                }
+                AnimatedTabRow(
+                    selectedIndex = selectedTab,
+                    tabs = tabs,
+                    onTabClick = { selectedTab = it }
+                )
 
                 when (selectedTab) {
                     0 -> MinutesTab(meeting, summary)
@@ -633,4 +592,88 @@ private fun formatTime(ms: Int): String {
     val minutes = totalSeconds / 60
     val seconds = totalSeconds % 60
     return "%02d:%02d".format(minutes, seconds)
+}
+
+@Composable
+private fun AnimatedTabRow(
+    selectedIndex: Int,
+    tabs: List<String>,
+    onTabClick: (Int) -> Unit
+) {
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val tabPositions = remember { mutableStateListOf<androidx.compose.ui.geometry.Rect>() }
+
+    // Ensure position list matches tabs
+    if (tabPositions.size != tabs.size) {
+        tabPositions.clear()
+        repeat(tabs.size) { tabPositions.add(androidx.compose.ui.geometry.Rect.Zero) }
+    }
+
+    val targetRect = tabPositions.getOrNull(selectedIndex) ?: androidx.compose.ui.geometry.Rect.Zero
+    val animOffsetX by animateFloatAsState(
+        targetValue = targetRect.left,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f),
+        label = "tabOffset"
+    )
+    val animWidth by animateFloatAsState(
+        targetValue = targetRect.width,
+        animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f),
+        label = "tabWidth"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+    ) {
+        // Animated pill indicator
+        Box(
+            modifier = Modifier
+                .offset { IntOffset(animOffsetX.toInt(), 0) }
+                .size(
+                    width = with(density) { animWidth.toDp() },
+                    height = 32.dp
+                )
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.primary)
+        )
+
+        // Tabs
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            tabs.forEachIndexed { index, title ->
+                val isActive = index == selectedIndex
+                Box(
+                    modifier = Modifier
+                        .onGloballyPositioned { coords ->
+                            val pos = coords.positionInParent()
+                            val size = coords.size
+                            if (index < tabPositions.size) {
+                                tabPositions[index] = androidx.compose.ui.geometry.Rect(
+                                    pos.x, pos.y, pos.x + size.width, pos.y + size.height
+                                )
+                            }
+                        }
+                        .clickable {
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                            onTabClick(index)
+                        }
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            color = if (isActive) MaterialTheme.colorScheme.onPrimary
+                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 13.sp
+                        )
+                    )
+                }
+            }
+        }
+    }
 }
