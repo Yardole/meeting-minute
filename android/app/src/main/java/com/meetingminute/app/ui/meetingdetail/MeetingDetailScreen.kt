@@ -163,12 +163,12 @@ fun MeetingDetailScreen(
                 onSpeedChange = { viewModel.cycleSpeed() }
             )
 
-            // Tabs between player and content
+            // Tabs between player and content, centered
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.Center
             ) {
                 tabs.forEachIndexed { index, title ->
                     val isActive = index == selectedTab
