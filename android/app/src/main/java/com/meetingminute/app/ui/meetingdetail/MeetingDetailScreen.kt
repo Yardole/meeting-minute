@@ -373,37 +373,44 @@ private fun ChatTab(
             .fillMaxSize()
             .padding(bottom = 72.dp) // clear the floating tab bar
     ) {
-        if (messages.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Ask questions about this meeting.",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+        // Message area wrapped in a rounded card
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(MaterialTheme.colorScheme.surface)
+        ) {
+            if (messages.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Ask questions about this meeting.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     )
-                )
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(messages.size) { index ->
-                    val (role, content) = messages[index]
-                    val isUser = role == ChatRole.USER
-                    ChatBubble(
-                        message = content,
-                        isUser = isUser,
-                        roleLabel = if (isUser) "You" else "AI"
-                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 4.dp),
+                    contentPadding = PaddingValues(vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(messages.size) { index ->
+                        val (role, content) = messages[index]
+                        val isUser = role == ChatRole.USER
+                        ChatBubble(
+                            message = content,
+                            isUser = isUser,
+                            roleLabel = if (isUser) "You" else "AI"
+                        )
+                    }
                 }
             }
         }
