@@ -491,6 +491,7 @@ private fun ChatTab(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 8.dp)
+                .offset(y = 4.dp)
                 .navigationBarsPadding(),
             verticalAlignment = Alignment.CenterVertically
         ) {
