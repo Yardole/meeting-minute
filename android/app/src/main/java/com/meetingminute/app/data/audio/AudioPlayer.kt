@@ -1,6 +1,7 @@
 package com.meetingminute.app.data.audio
 
 import android.media.MediaPlayer
+import android.media.PlaybackParams
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,6 +23,9 @@ class AudioPlayer {
     private val _duration = MutableStateFlow(0)
     val duration: StateFlow<Int> = _duration
 
+    private val _speed = MutableStateFlow(1.0f)
+    val speed: StateFlow<Float> = _speed
+
     private var progressJob: Job? = null
     private val scope = CoroutineScope(Dispatchers.Main)
 
@@ -32,6 +36,7 @@ class AudioPlayer {
             prepare()
             _duration.value = duration
             _currentPosition.value = 0
+            _speed.value = 1.0f
             setOnCompletionListener {
                 _isPlaying.value = false
                 _currentPosition.value = 0
@@ -55,6 +60,13 @@ class AudioPlayer {
     fun seekTo(positionMs: Int) {
         player?.seekTo(positionMs)
         _currentPosition.value = positionMs
+    }
+
+    fun setSpeed(speed: Float) {
+        player?.let {
+            it.playbackParams = PlaybackParams().setSpeed(speed)
+            _speed.value = speed
+        }
     }
 
     fun release() {

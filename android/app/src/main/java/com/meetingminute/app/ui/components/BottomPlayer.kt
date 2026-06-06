@@ -38,7 +38,9 @@ fun BottomPlayer(
     onPlayPause: () -> Unit = {},
     onSeekBack: () -> Unit = {},
     onSeekForward: () -> Unit = {},
-    onProgressClick: (Float) -> Unit = {}
+    onProgressClick: (Float) -> Unit = {},
+    speed: Float = 1.0f,
+    onSpeedChange: () -> Unit = {}
 ) {
     val progress = if (durationMs > 0) currentPositionMs.toFloat() / durationMs else 0f
     val currentTime = formatTime(currentPositionMs)
@@ -99,13 +101,15 @@ fun BottomPlayer(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "1.0x",
+                text = "${String.format("%.1f", speed)}x",
                 style = MaterialTheme.typography.labelLarge.copy(
                     color = MaterialTheme.colorScheme.primary,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold
                 ),
-                modifier = Modifier.padding(horizontal = 4.dp)
+                modifier = Modifier
+                    .padding(horizontal = 4.dp)
+                    .clickable { onSpeedChange() }
             )
 
             IconButton(

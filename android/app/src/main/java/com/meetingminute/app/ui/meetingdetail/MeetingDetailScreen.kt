@@ -46,6 +46,7 @@ fun MeetingDetailScreen(
     val isPlaying by viewModel.isPlaying.collectAsState()
     val currentPosition by viewModel.currentPosition.collectAsState()
     val duration by viewModel.duration.collectAsState()
+    val speed by viewModel.speed.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Minutes", "Transcript", "Chat")
 
@@ -64,7 +65,9 @@ fun MeetingDetailScreen(
                 isPlaying = isPlaying,
                 onPlayPause = { viewModel.togglePlayback() },
                 onSeekBack = { viewModel.seekTo((currentPosition - 10000).coerceAtLeast(0)) },
-                onSeekForward = { viewModel.seekTo((currentPosition + 10000).coerceAtMost(duration)) }
+                onSeekForward = { viewModel.seekTo((currentPosition + 10000).coerceAtMost(duration)) },
+                speed = speed,
+                onSpeedChange = { viewModel.cycleSpeed() }
             )
         }
     ) { padding ->

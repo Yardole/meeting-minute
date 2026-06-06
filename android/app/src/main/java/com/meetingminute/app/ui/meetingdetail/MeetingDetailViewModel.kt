@@ -41,6 +41,7 @@ class MeetingDetailViewModel @Inject constructor(
     val isPlaying: StateFlow<Boolean> = audioPlayer.isPlaying
     val currentPosition: StateFlow<Int> = audioPlayer.currentPosition
     val duration: StateFlow<Int> = audioPlayer.duration
+    val speed: StateFlow<Float> = audioPlayer.speed
 
     fun prepareAudio(filePath: String) {
         audioPlayer.prepare(filePath)
@@ -52,6 +53,17 @@ class MeetingDetailViewModel @Inject constructor(
         } else {
             audioPlayer.play()
         }
+    }
+
+    fun cycleSpeed() {
+        val next = when (speed.value) {
+            1.0f -> 1.25f
+            1.25f -> 1.5f
+            1.5f -> 2.0f
+            2.0f -> 1.0f
+            else -> 1.0f
+        }
+        audioPlayer.setSpeed(next)
     }
 
     fun seekTo(positionMs: Int) {
