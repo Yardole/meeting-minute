@@ -4,8 +4,8 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -58,14 +58,14 @@ fun AppNavigation(
                     navArgument("meetingId") { type = NavType.StringType }
                 ),
                 enterTransition = {
-                    slideInVertically(
-                        initialOffsetY = { it },
+                    slideInHorizontally(
+                        initialOffsetX = { it },
                         animationSpec = tween(350)
                     ) + fadeIn(animationSpec = tween(350))
                 },
                 exitTransition = {
-                    slideOutVertically(
-                        targetOffsetY = { it },
+                    slideOutHorizontally(
+                        targetOffsetX = { it },
                         animationSpec = tween(300)
                     ) + fadeOut(animationSpec = tween(300))
                 }
