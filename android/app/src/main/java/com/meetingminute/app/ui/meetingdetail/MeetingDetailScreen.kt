@@ -603,12 +603,13 @@ private fun ChatBubble(
                 )
             }
         } else {
-            // Oliva: no bubble, just text on the page
+            // Oliva: no bubble, Fraunces serif text on the page
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = com.meetingminute.app.ui.theme.Fraunces,
                     color = MaterialTheme.colorScheme.onBackground,
-                    fontSize = 13.sp, lineHeight = 20.sp
+                    fontSize = 14.sp, lineHeight = 22.sp
                 ),
                 modifier = Modifier.padding(horizontal = 2.dp, vertical = 4.dp)
             )
