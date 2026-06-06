@@ -186,7 +186,10 @@ fun MeetingDetailScreen(
                             onSeekBack = { viewModel.seekTo((currentPosition - 10000).coerceAtLeast(0)) },
                             onSeekForward = { viewModel.seekTo((currentPosition + 10000).coerceAtMost(duration)) },
                             speed = speed,
-                            onSpeedChange = { viewModel.cycleSpeed() }
+                            onSpeedChange = { viewModel.cycleSpeed() },
+                            onProgressClick = { fraction ->
+                                viewModel.seekTo((fraction * duration).toInt())
+                            }
                         )
                     }
 
@@ -255,7 +258,10 @@ fun MeetingDetailScreen(
                     onSeekBack = { viewModel.seekTo((currentPosition - 10000).coerceAtLeast(0)) },
                     onSeekForward = { viewModel.seekTo((currentPosition + 10000).coerceAtMost(duration)) },
                     speed = speed,
-                    onSpeedChange = { viewModel.cycleSpeed() }
+                    onSpeedChange = { viewModel.cycleSpeed() },
+                onProgressClick = { fraction ->
+                    viewModel.seekTo((fraction * duration).toInt())
+                }
                 )
 
                 Row(
