@@ -68,12 +68,12 @@ fun RecordingScreen(
             repeat(3) {
                 // duk duk duk
                 haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                delay(180)
+                delay(300)
                 haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                delay(180)
+                delay(300)
                 haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
                 // pause between groups
-                if (it < 2) delay(500)
+                if (it < 2) delay(700)
             }
         }
     }
