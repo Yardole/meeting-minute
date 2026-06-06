@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import com.meetingminute.app.ui.components.EdgeScrollHaptics
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -97,7 +99,12 @@ fun HomeScreen(
                 )
             }
 
+            val listState = rememberLazyListState()
+            val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+            EdgeScrollHaptics(listState, haptic)
+
             LazyColumn(
+                state = listState,
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {

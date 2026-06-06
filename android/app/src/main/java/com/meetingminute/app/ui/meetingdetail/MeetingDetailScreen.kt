@@ -53,6 +53,7 @@ import com.meetingminute.app.domain.model.Meeting
 import com.meetingminute.app.domain.model.Speaker
 import com.meetingminute.app.domain.model.TranscriptSegment
 import com.meetingminute.app.ui.components.BottomPlayer
+import com.meetingminute.app.ui.components.EdgeScrollHaptics
 import java.util.UUID
 
 @Composable
@@ -324,7 +325,11 @@ fun MeetingDetailScreen(
 @Composable
 private fun MinutesTab(meeting: Meeting?, summary: String?) {
     if (summary != null) {
+        val listState = rememberLazyListState()
+        val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+        EdgeScrollHaptics(listState, haptic)
         LazyColumn(
+            state = listState,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp)
@@ -395,7 +400,11 @@ private fun TranscriptTab(
         return
     }
 
+    val listState = rememberLazyListState()
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    EdgeScrollHaptics(listState, haptic)
     LazyColumn(
+        state = listState,
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp)
@@ -482,6 +491,7 @@ private fun ChatTab(
                 }
             } else {
                 val listState = rememberLazyListState()
+                EdgeScrollHaptics(listState, haptic)
 
                 LaunchedEffect(messages.size) {
                     if (messages.isNotEmpty()) {
