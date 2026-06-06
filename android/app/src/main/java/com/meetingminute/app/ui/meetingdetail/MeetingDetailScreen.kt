@@ -469,7 +469,7 @@ private fun ChatTab(
                     .padding(horizontal = 16.dp),
                 contentPadding = PaddingValues(
                     top = 12.dp,
-                    bottom = 68.dp // clears the floating input bar
+                    bottom = 80.dp // clears the floating input bar
                 ),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
