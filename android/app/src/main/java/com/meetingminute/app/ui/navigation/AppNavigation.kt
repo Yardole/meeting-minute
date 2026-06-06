@@ -1,6 +1,11 @@
 package com.meetingminute.app.ui.navigation
 
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -51,7 +56,19 @@ fun AppNavigation(
                 route = Screen.MeetingDetail.route,
                 arguments = listOf(
                     navArgument("meetingId") { type = NavType.StringType }
-                )
+                ),
+                enterTransition = {
+                    slideInVertically(
+                        initialOffsetY = { it },
+                        animationSpec = tween(350)
+                    ) + fadeIn(animationSpec = tween(350))
+                },
+                exitTransition = {
+                    slideOutVertically(
+                        targetOffsetY = { it },
+                        animationSpec = tween(300)
+                    ) + fadeOut(animationSpec = tween(300))
+                }
             ) { backStackEntry ->
                 val meetingId = backStackEntry.arguments?.getString("meetingId") ?: ""
                 MeetingDetailScreen(
