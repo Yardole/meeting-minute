@@ -151,69 +151,145 @@ fun MeetingDetailScreen(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
 
-            // Player right under the title
-            BottomPlayer(
-                currentPositionMs = currentPosition,
-                durationMs = duration,
-                isPlaying = isPlaying,
-                onPlayPause = { viewModel.togglePlayback() },
-                onSeekBack = { viewModel.seekTo((currentPosition - 10000).coerceAtLeast(0)) },
-                onSeekForward = { viewModel.seekTo((currentPosition + 10000).coerceAtMost(duration)) },
-                speed = speed,
-                onSpeedChange = { viewModel.cycleSpeed() }
-            )
+            val isLandscape =
+                androidx.compose.ui.platform.LocalConfiguration.current.orientation ==
+                    android.content.res.Configuration.ORIENTATION_LANDSCAPE
 
-            // Tabs between player and content, centered
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                tabs.forEachIndexed { index, title ->
-                    val isActive = index == selectedTab
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(
-                                if (isActive) MaterialTheme.colorScheme.primary
-                                else Color.Transparent
+            if (isLandscape) {
+                // Landscape: player on left, tabs + content on right
+                Row(modifier = Modifier.fillMaxSize()) {
+                    // Left: player
+                    BottomPlayer(
+                        modifier = Modifier.weight(0.4f),
+                        currentPositionMs = currentPosition,
+                        durationMs = duration,
+                        isPlaying = isPlaying,
+                        onPlayPause = { viewModel.togglePlayback() },
+                        onSeekBack = { viewModel.seekTo((currentPosition - 10000).coerceAtLeast(0)) },
+                        onSeekForward = { viewModel.seekTo((currentPosition + 10000).coerceAtMost(duration)) },
+                        speed = speed,
+                        onSpeedChange = { viewModel.cycleSpeed() }
+                    )
+
+                    // Right: tabs + content
+                    Column(modifier = Modifier.weight(0.6f)) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            tabs.forEachIndexed { index, title ->
+                                val isActive = index == selectedTab
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(
+                                            if (isActive) MaterialTheme.colorScheme.primary
+                                            else Color.Transparent
+                                        )
+                                        .clickable { selectedTab = index }
+                                        .padding(horizontal = 14.dp, vertical = 6.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = title,
+                                        style = MaterialTheme.typography.labelLarge.copy(
+                                            color = if (isActive) MaterialTheme.colorScheme.onPrimary
+                                            else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            fontSize = 13.sp
+                                        )
+                                    )
+                                }
+                            }
+                        }
+
+                        when (selectedTab) {
+                            0 -> MinutesTab(meeting, summary)
+                            1 -> TranscriptTab(
+                                segments = segments,
+                                speakers = speakers,
+                                onTimeClick = { viewModel.seekTo(it) },
+                                onRenameSpeaker = { speakerId ->
+                                    val spk = speakers.find { it.id == speakerId }
+                                    renameText = spk?.name ?: spk?.label ?: ""
+                                    renameSpeakerId = speakerId
+                                }
                             )
-                            .clickable { selectedTab = index }
-                            .padding(horizontal = 14.dp, vertical = 6.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.labelLarge.copy(
-                                color = if (isActive) MaterialTheme.colorScheme.onPrimary
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 13.sp
+                            2 -> ChatTab(
+                                messages = chatMessages,
+                                inputText = chatInput,
+                                isSending = isSending,
+                                onInputChanged = { viewModel.onChatInputChanged(it) },
+                                onSend = { viewModel.sendMessage() }
                             )
-                        )
+                        }
                     }
                 }
-            }
+            } else {
+                // Portrait: vertical stack
+                BottomPlayer(
+                    currentPositionMs = currentPosition,
+                    durationMs = duration,
+                    isPlaying = isPlaying,
+                    onPlayPause = { viewModel.togglePlayback() },
+                    onSeekBack = { viewModel.seekTo((currentPosition - 10000).coerceAtLeast(0)) },
+                    onSeekForward = { viewModel.seekTo((currentPosition + 10000).coerceAtMost(duration)) },
+                    speed = speed,
+                    onSpeedChange = { viewModel.cycleSpeed() }
+                )
 
-            when (selectedTab) {
-                0 -> MinutesTab(meeting, summary)
-                1 -> TranscriptTab(
-                    segments = segments,
-                    speakers = speakers,
-                    onTimeClick = { viewModel.seekTo(it) },
-                    onRenameSpeaker = { speakerId ->
-                        val spk = speakers.find { it.id == speakerId }
-                        renameText = spk?.name ?: spk?.label ?: ""
-                        renameSpeakerId = speakerId
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        val isActive = index == selectedTab
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(
+                                    if (isActive) MaterialTheme.colorScheme.primary
+                                    else Color.Transparent
+                                )
+                                .clickable { selectedTab = index }
+                                .padding(horizontal = 14.dp, vertical = 6.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = title,
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    color = if (isActive) MaterialTheme.colorScheme.onPrimary
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 13.sp
+                                )
+                            )
+                        }
                     }
-                )
-                2 -> ChatTab(
-                    messages = chatMessages,
-                    inputText = chatInput,
-                    isSending = isSending,
-                    onInputChanged = { viewModel.onChatInputChanged(it) },
-                    onSend = { viewModel.sendMessage() }
-                )
+                }
+
+                when (selectedTab) {
+                    0 -> MinutesTab(meeting, summary)
+                    1 -> TranscriptTab(
+                        segments = segments,
+                        speakers = speakers,
+                        onTimeClick = { viewModel.seekTo(it) },
+                        onRenameSpeaker = { speakerId ->
+                            val spk = speakers.find { it.id == speakerId }
+                            renameText = spk?.name ?: spk?.label ?: ""
+                            renameSpeakerId = speakerId
+                        }
+                    )
+                    2 -> ChatTab(
+                        messages = chatMessages,
+                        inputText = chatInput,
+                        isSending = isSending,
+                        onInputChanged = { viewModel.onChatInputChanged(it) },
+                        onSend = { viewModel.sendMessage() }
+                    )
+                }
             }
         }
     }
