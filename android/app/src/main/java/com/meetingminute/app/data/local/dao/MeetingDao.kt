@@ -31,4 +31,10 @@ interface MeetingDao {
 
     @Query("SELECT * FROM meetings WHERE deletedAt IS NULL AND updatedAt > :since")
     suspend fun getChangedSince(since: Long): List<MeetingEntity>
+
+    @Query("SELECT * FROM meetings")
+    suspend fun getAllForSync(): List<MeetingEntity>
+
+    @Query("DELETE FROM meetings")
+    suspend fun deleteAll()
 }

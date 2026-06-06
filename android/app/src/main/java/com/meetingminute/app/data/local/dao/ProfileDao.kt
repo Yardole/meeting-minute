@@ -22,4 +22,10 @@ interface ProfileDao {
 
     @Update
     suspend fun update(profile: ProfileEntity)
+
+    @Query("SELECT * FROM profiles")
+    suspend fun getAllForSync(): List<ProfileEntity>
+
+    @Query("DELETE FROM profiles")
+    suspend fun deleteAll()
 }

@@ -8,9 +8,10 @@ import java.util.UUID
 @Entity(tableName = "profiles")
 data class ProfileEntity(
     @PrimaryKey
-    val id: UUID,
-    val displayName: String?,
-    val avatarUrl: String?,
-    val createdAt: Instant,
-    val updatedAt: Instant
+    val id: UUID = UUID.randomUUID(),
+    val displayName: String? = null,
+    val avatarUrl: String? = null,
+    val createdAt: Instant = Instant.now(),
+    val updatedAt: Instant = Instant.now(),
+    val deletedAt: Instant? = null
 )

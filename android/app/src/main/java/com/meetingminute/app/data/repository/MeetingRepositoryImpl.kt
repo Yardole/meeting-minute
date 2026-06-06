@@ -3,25 +3,32 @@ package com.meetingminute.app.data.repository
 import android.media.MediaMetadataRetriever
 import android.util.Log
 import com.meetingminute.app.data.local.MeetingMinuteDatabase
+import com.meetingminute.app.data.local.entity.ChatMessageEntity
+import com.meetingminute.app.data.local.entity.ChatRole
 import com.meetingminute.app.data.local.entity.MeetingEntity
 import com.meetingminute.app.data.local.entity.MeetingStatus
 import com.meetingminute.app.data.local.entity.SpeakerEntity
+import com.meetingminute.app.data.local.entity.SummaryEntity
 import com.meetingminute.app.data.local.entity.TranscriptSegmentEntity
-import org.json.JSONArray
+import com.meetingminute.app.data.remote.SupabaseConfig
+import com.meetingminute.app.data.remote.SupabaseEdgeFunctionClient
 import com.meetingminute.app.data.remote.SupabaseStorageClient
 import com.meetingminute.app.domain.model.Meeting
 import com.meetingminute.app.domain.model.Speaker
 import com.meetingminute.app.domain.model.TranscriptSegment
 import com.meetingminute.app.domain.repository.MeetingRepository
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
-import java.net.HttpURLConnection
-import java.net.URL
+import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -29,17 +36,17 @@ import javax.inject.Singleton
 @Singleton
 class MeetingRepositoryImpl @Inject constructor(
     private val database: MeetingMinuteDatabase,
-    private val storageClient: SupabaseStorageClient
+    private val storageClient: SupabaseStorageClient,
+    private val config: SupabaseConfig,
+    private val edgeFunctionClient: SupabaseEdgeFunctionClient
 ) : MeetingRepository {
 
-    private val supabaseUrl = "https://fxzddkwvhavwvzttdlnj.supabase.co"
-    private val anonKey = "sb_publishable_wUgKgyaWW8uQvHwWSylSAA_HujDKOra"
+    // Scope that outlives any individual ViewModel for background processing
+    private val processingScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun observeMeetings(): Flow<List<Meeting>> {
         return database.meetingDao().observeAll()
-            .map { entities ->
-                entities.map { it.toDomain() }
-            }
+            .map { entities -> entities.map { it.toDomain() } }
     }
 
     override fun observeMeeting(id: UUID): Flow<Meeting?> {
@@ -70,9 +77,17 @@ class MeetingRepositoryImpl @Inject constructor(
 
     override fun observeSpeakers(meetingId: UUID): Flow<List<Speaker>> {
         return database.speakerDao().observeByMeetingId(meetingId)
-            .map { entities ->
-                entities.map { it.toDomain() }
-            }
+            .map { entities -> entities.map { it.toDomain() } }
+    }
+
+    override fun observeSummary(meetingId: UUID): Flow<String?> {
+        return database.summaryDao().observeByMeetingId(meetingId)
+            .map { it?.content }
+    }
+
+    override fun observeChatMessages(meetingId: UUID): Flow<List<Pair<ChatRole, String>>> {
+        return database.chatMessageDao().observeByMeetingId(meetingId)
+            .map { entities -> entities.map { it.role to it.content } }
     }
 
     override suspend fun createMeeting(title: String, localAudioPath: String): Meeting {
@@ -88,6 +103,42 @@ class MeetingRepositoryImpl @Inject constructor(
         return entity.toDomain()
     }
 
+    override fun processRecording(localAudioPath: String): Meeting {
+        // Quick Room insert on IO — returns immediately
+        val meeting = runBlocking(Dispatchers.IO) {
+            createMeeting(
+                title = "Meeting ${System.currentTimeMillis()}",
+                localAudioPath = localAudioPath
+            )
+        }
+
+        // Run the pipeline in a scope that survives navigation
+        processingScope.launch {
+            Log.d("MeetingRepo", "Starting pipeline for meeting ${meeting.id}")
+
+            uploadAudio(meeting.id)
+                .onSuccess { audioUrl ->
+                    Log.d("MeetingRepo", "Upload done, starting transcribe")
+                    transcribeMeeting(meeting.id, audioUrl)
+                        .onSuccess {
+                            Log.d("MeetingRepo", "Transcribe done, starting summarize")
+                            val transcriptText = getTranscriptText(meeting.id)
+                            if (transcriptText.isNotBlank()) {
+                                summarizeMeeting(meeting.id, transcriptText)
+                                    .onSuccess { Log.d("MeetingRepo", "Summarize done") }
+                                    .onFailure { Log.e("MeetingRepo", "Summarize failed", it) }
+                            } else {
+                                Log.d("MeetingRepo", "No transcript text, skipping summarize")
+                            }
+                        }
+                        .onFailure { Log.e("MeetingRepo", "Transcribe failed", it) }
+                }
+                .onFailure { Log.e("MeetingRepo", "Upload failed", it) }
+        }
+
+        return meeting
+    }
+
     override suspend fun updateMeeting(meeting: Meeting) {
         val entity = database.meetingDao().getById(meeting.id) ?: return
         database.meetingDao().update(
@@ -95,14 +146,15 @@ class MeetingRepositoryImpl @Inject constructor(
                 title = meeting.title,
                 durationMs = meeting.durationMs,
                 status = meeting.status,
-                audioUrl = meeting.audioUrl
+                audioUrl = meeting.audioUrl,
+                updatedAt = Instant.now()
             )
         )
     }
 
     override suspend fun deleteMeeting(id: UUID) {
         val entity = database.meetingDao().getById(id) ?: return
-        database.meetingDao().update(entity.copy(deletedAt = java.time.Instant.now()))
+        database.meetingDao().update(entity.copy(deletedAt = Instant.now(), updatedAt = Instant.now()))
     }
 
     override suspend fun uploadAudio(meetingId: UUID): Result<String> {
@@ -124,110 +176,211 @@ class MeetingRepositoryImpl @Inject constructor(
                 entity.copy(
                     audioUrl = audioUrl,
                     audioBucketPath = bucketPath,
-                    status = MeetingStatus.UPLOADED
+                    status = MeetingStatus.UPLOADED,
+                    updatedAt = Instant.now()
                 )
             )
             audioUrl
         }
     }
 
-    override suspend fun transcribeMeeting(meetingId: UUID, audioUrl: String): Result<Unit> =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                database.meetingDao().getById(meetingId)?.let { entity ->
-                    database.meetingDao().update(entity.copy(status = MeetingStatus.TRANSCRIBING))
-                }
+    override suspend fun transcribeMeeting(meetingId: UUID, audioUrl: String): Result<Unit> {
+        val entity = database.meetingDao().getById(meetingId) ?: return Result.failure(
+            IllegalStateException("Meeting not found")
+        )
 
-                val url = URL("$supabaseUrl/functions/v1/transcribe")
-                val connection = (url.openConnection() as HttpURLConnection).apply {
-                    requestMethod = "POST"
-                    setRequestProperty("apikey", anonKey)
-                    setRequestProperty("Content-Type", "application/json")
-                    doOutput = true
-                    connectTimeout = 30_000
-                    readTimeout = 180_000
-                }
+        database.meetingDao().update(entity.copy(status = MeetingStatus.TRANSCRIBING, updatedAt = Instant.now()))
 
-                val payload = JSONObject().apply {
-                    put("audioUrl", audioUrl)
-                    put("meetingId", meetingId.toString())
-                }
+        val payload = JSONObject().apply {
+            put("audioUrl", audioUrl)
+            put("meetingId", meetingId.toString())
+        }
 
-                connection.outputStream.use { output ->
-                    output.write(payload.toString().toByteArray())
-                }
+        return edgeFunctionClient.call("transcribe", payload, readTimeout = 180_000)
+            .map { json ->
+                val segmentsArray = json.optJSONArray("segments")
+                val speakersArray = json.optJSONArray("speakers")
 
-                val responseCode = connection.responseCode
-                val responseBody = if (responseCode in 200..299) {
-                    connection.inputStream.bufferedReader().readText()
-                } else {
-                    connection.errorStream?.bufferedReader()?.readText() ?: ""
-                }
-                connection.disconnect()
-
-                if (responseCode in 200..299) {
-                    val json = JSONObject(responseBody)
-                    val segmentsArray = json.optJSONArray("segments")
-                    val speakersArray = json.optJSONArray("speakers")
-
-                    if (speakersArray != null) {
-                        val speakerEntities = mutableListOf<SpeakerEntity>()
-                        for (i in 0 until speakersArray.length()) {
-                            val s = speakersArray.getJSONObject(i)
-                            speakerEntities.add(
-                                SpeakerEntity(
-                                    id = UUID.fromString(s.getString("id")),
-                                    meetingId = meetingId,
-                                    label = s.getString("label"),
-                                    name = s.optString("name", null),
-                                    displayOrder = i
-                                )
+                if (speakersArray != null) {
+                    val speakerEntities = mutableListOf<SpeakerEntity>()
+                    for (i in 0 until speakersArray.length()) {
+                        val s = speakersArray.getJSONObject(i)
+                        speakerEntities.add(
+                            SpeakerEntity(
+                                id = UUID.fromString(s.getString("id")),
+                                meetingId = meetingId,
+                                label = s.getString("label"),
+                                name = s.optString("name", null),
+                                displayOrder = i
                             )
-                        }
-                        if (speakerEntities.isNotEmpty()) {
-                            database.speakerDao().insertAll(speakerEntities)
-                        }
+                        )
                     }
-
-                    if (segmentsArray != null) {
-                        val segmentEntities = mutableListOf<TranscriptSegmentEntity>()
-                        for (i in 0 until segmentsArray.length()) {
-                            val seg = segmentsArray.getJSONObject(i)
-                            val speakerIdStr = seg.optString("speakerId", null)
-                            segmentEntities.add(
-                                TranscriptSegmentEntity(
-                                    id = UUID.fromString(seg.getString("id")),
-                                    meetingId = meetingId,
-                                    speakerId = if (speakerIdStr != null && speakerIdStr != "null") UUID.fromString(speakerIdStr) else null,
-                                    text = seg.getString("text"),
-                                    startTimeMs = seg.getInt("startTimeMs"),
-                                    endTimeMs = seg.getInt("endTimeMs"),
-                                    confidence = seg.optDouble("confidence").toFloat().takeIf { !seg.isNull("confidence") }
-                                )
-                            )
-                        }
-                        if (segmentEntities.isNotEmpty()) {
-                            database.transcriptSegmentDao().insertAll(segmentEntities)
-                        }
+                    if (speakerEntities.isNotEmpty()) {
+                        database.speakerDao().insertAll(speakerEntities)
                     }
-
-                    val count = segmentsArray?.length() ?: 0
-                    Log.d("MeetingRepo", "Transcription saved: $count segments locally")
-
-                    database.meetingDao().getById(meetingId)?.let { entity ->
-                        database.meetingDao().update(entity.copy(status = MeetingStatus.TRANSCRIBED))
-                    }
-                    Unit
-                } else {
-                    database.meetingDao().getById(meetingId)?.let { entity ->
-                        database.meetingDao().update(entity.copy(status = MeetingStatus.ERROR))
-                    }
-                    throw Exception("Transcription failed: HTTP $responseCode - $responseBody")
                 }
+
+                if (segmentsArray != null) {
+                    val segmentEntities = mutableListOf<TranscriptSegmentEntity>()
+                    for (i in 0 until segmentsArray.length()) {
+                        val seg = segmentsArray.getJSONObject(i)
+                        val speakerIdStr = seg.optString("speakerId", null)
+                        segmentEntities.add(
+                            TranscriptSegmentEntity(
+                                id = UUID.fromString(seg.getString("id")),
+                                meetingId = meetingId,
+                                speakerId = if (speakerIdStr != null && speakerIdStr != "null") UUID.fromString(
+                                    speakerIdStr
+                                ) else null,
+                                text = seg.getString("text"),
+                                startTimeMs = seg.getInt("startTimeMs"),
+                                endTimeMs = seg.getInt("endTimeMs"),
+                                confidence = seg.optDouble("confidence").toFloat()
+                                    .takeIf { !seg.isNull("confidence") }
+                            )
+                        )
+                    }
+                    if (segmentEntities.isNotEmpty()) {
+                        database.transcriptSegmentDao().insertAll(segmentEntities)
+                    }
+                }
+
+                val count = segmentsArray?.length() ?: 0
+                Log.d("MeetingRepo", "Transcription saved: $count segments locally")
+
+                database.meetingDao().getById(meetingId)?.let { e ->
+                    database.meetingDao().update(e.copy(status = MeetingStatus.TRANSCRIBED, updatedAt = Instant.now()))
+                }
+                Unit
             }.onFailure { e ->
                 Log.e("MeetingRepo", "Transcription error", e)
+                database.meetingDao().getById(meetingId)?.let { e ->
+                    database.meetingDao().update(e.copy(status = MeetingStatus.ERROR, updatedAt = Instant.now()))
+                }
+                Unit
             }
+    }
+
+    override suspend fun summarizeMeeting(meetingId: UUID, transcriptText: String): Result<String> {
+        val entity = database.meetingDao().getById(meetingId)
+            ?: return Result.failure(IllegalStateException("Meeting not found"))
+
+        database.meetingDao().update(entity.copy(status = MeetingStatus.SUMMARIZING, updatedAt = Instant.now()))
+
+        val payload = JSONObject().apply {
+            put("transcript", transcriptText)
+            put("meetingId", meetingId.toString())
         }
+
+        return edgeFunctionClient.call("summarize", payload, readTimeout = 120_000)
+            .map { json ->
+                val content = json.getString("content")
+                val keyPoints = json.optJSONArray("keyPoints")?.let { arr ->
+                    (0 until arr.length()).map { arr.getString(it) }
+                } ?: emptyList()
+
+                val summaryEntity = SummaryEntity(
+                    meetingId = meetingId,
+                    content = content,
+                    keyPoints = JSONArray(keyPoints).toString(),
+                    generatedAt = Instant.now()
+                )
+                database.summaryDao().insert(summaryEntity)
+
+                database.meetingDao().getById(meetingId)?.let { e ->
+                    database.meetingDao().update(
+                        e.copy(status = MeetingStatus.SUMMARIZED, updatedAt = Instant.now())
+                    )
+                }
+
+                Log.d("MeetingRepo", "Summary saved for meeting $meetingId")
+                content
+            }.onFailure { e ->
+                Log.e("MeetingRepo", "Summarization error", e)
+                database.meetingDao().getById(meetingId)?.let { e ->
+                    database.meetingDao().update(e.copy(status = MeetingStatus.ERROR, updatedAt = Instant.now()))
+                }
+            }
+    }
+
+    override suspend fun sendChatMessage(meetingId: UUID, transcriptText: String, message: String): Result<String> {
+        val messages = database.chatMessageDao().observeByMeetingId(meetingId)
+        // Build chat history from existing messages
+        val chatHistory = JSONArray()
+        // Collect existing messages for history
+        val existingMessages = mutableListOf<ChatMessageEntity>()
+        // Use a simple approach: get existing messages and build payload
+        val payload = JSONObject().apply {
+            put("transcript", transcriptText)
+            put("newMessage", message)
+            put("meetingId", meetingId.toString())
+            put("chatHistory", JSONArray()) // Edge function will look up history from DB
+        }
+
+        // Insert user message locally
+        val userMessage = ChatMessageEntity(
+            meetingId = meetingId,
+            role = ChatRole.USER,
+            content = message
+        )
+        database.chatMessageDao().insert(userMessage)
+
+        return edgeFunctionClient.call("chat", payload, readTimeout = 120_000)
+            .map { json ->
+                val reply = json.getString("reply")
+                val assistantMessage = ChatMessageEntity(
+                    meetingId = meetingId,
+                    role = ChatRole.ASSISTANT,
+                    content = reply
+                )
+                database.chatMessageDao().insert(assistantMessage)
+                Log.d("MeetingRepo", "Chat reply saved for meeting $meetingId")
+                reply
+            }.onFailure { e ->
+                Log.e("MeetingRepo", "Chat error", e)
+            }
+    }
+
+    override suspend fun updateSpeaker(speaker: Speaker) {
+        val entities = database.speakerDao().observeByMeetingId(speaker.meetingId)
+        // Find and update the speaker entity
+        val speakerEntity = SpeakerEntity(
+            id = speaker.id,
+            meetingId = speaker.meetingId,
+            label = speaker.label,
+            name = speaker.name,
+            displayOrder = speaker.displayOrder,
+            updatedAt = Instant.now()
+        )
+        database.speakerDao().update(speakerEntity)
+    }
+
+    override suspend fun getTranscriptText(meetingId: UUID): String {
+        val segments = mutableListOf<TranscriptSegmentEntity>()
+        database.transcriptSegmentDao().observeByMeetingId(meetingId).map { segs ->
+            segments.clear()
+            segments.addAll(segs)
+        }
+        // We need to get the value synchronously - use a different approach
+        return buildTranscriptText(meetingId)
+    }
+
+    private suspend fun buildTranscriptText(meetingId: UUID): String {
+        val segments = mutableListOf<TranscriptSegmentEntity>()
+        val speakers = mutableMapOf<UUID, SpeakerEntity>()
+
+        // Collect via a one-shot query
+        val allSegments = database.transcriptSegmentDao().getByMeetingId(meetingId)
+        val allSpeakers = database.speakerDao().getByMeetingId(meetingId)
+
+        val speakerMap = allSpeakers.associate { it.id to it }
+
+        return allSegments.joinToString("\n") { seg ->
+            val spk = seg.speakerId?.let { speakerMap[it] }
+            val name = spk?.name ?: spk?.label ?: "Speaker"
+            "$name: ${seg.text}"
+        }
+    }
 
     private fun getAudioDuration(filePath: String): Int {
         return try {

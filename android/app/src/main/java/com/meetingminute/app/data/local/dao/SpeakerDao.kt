@@ -20,6 +20,15 @@ interface SpeakerDao {
     @Update
     suspend fun update(speaker: SpeakerEntity)
 
+    @Query("SELECT * FROM speakers WHERE meetingId = :meetingId AND deletedAt IS NULL ORDER BY displayOrder ASC")
+    suspend fun getByMeetingId(meetingId: UUID): List<SpeakerEntity>
+
     @Query("SELECT * FROM speakers WHERE deletedAt IS NULL AND updatedAt > :since")
     suspend fun getChangedSince(since: Long): List<SpeakerEntity>
+
+    @Query("SELECT * FROM speakers")
+    suspend fun getAllForSync(): List<SpeakerEntity>
+
+    @Query("DELETE FROM speakers")
+    suspend fun deleteAll()
 }

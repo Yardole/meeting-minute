@@ -1,22 +1,111 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
+
+const DEEPSEEK_URL = 'https://api.deepseek.com/v1/chat/completions'
 
 serve(async (req) => {
-  const { transcript, meetingId } = await req.json()
-  const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY')
+  try {
+    const { transcript, meetingId } = await req.json()
+    const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY')
 
-  if (!deepseekApiKey) {
+    if (!deepseekApiKey) {
+      return new Response(
+        JSON.stringify({ error: 'DEEPSEEK_API_KEY not set' }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+    if (!transcript || !meetingId) {
+      return new Response(
+        JSON.stringify({ error: 'transcript and meetingId are required' }),
+        { status: 400, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+      { auth: { persistSession: false } }
+    )
+
+    await supabase.from('meetings').update({ status: 'summarizing' }).eq('id', meetingId)
+
+    const systemPrompt = `You are an expert meeting summarizer. Analyze the provided transcript and produce:
+1. A concise, well-structured summary covering key decisions, action items, and important discussion points.
+2. A list of key points (3-7 bullet points) highlighting the most important takeaways.
+
+You must respond with a JSON object in this exact format:
+{
+  "content": "Full meeting summary here...",
+  "key_points": ["Key point 1", "Key point 2", "Key point 3"]
+}`
+
+    const response = await fetch(DEEPSEEK_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${deepseekApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Please summarize this meeting transcript:\n\n${transcript}` }
+        ],
+        temperature: 0.3,
+        max_tokens: 4096,
+      }),
+    })
+
+    if (!response.ok) {
+      const err = await response.text()
+      await supabase.from('meetings').update({ status: 'error' }).eq('id', meetingId)
+      return new Response(
+        JSON.stringify({ error: `DeepSeek API error: ${err}` }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const data = await response.json()
+    const content = data.choices?.[0]?.message?.content || ''
+
+    // Parse the JSON response from DeepSeek
+    let parsed: { content: string; key_points: string[] }
+    try {
+      // Handle possible markdown code block wrapping
+      const jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
+      parsed = JSON.parse(jsonStr)
+    } catch {
+      // Fallback: treat entire response as summary content
+      parsed = { content, key_points: [] }
+    }
+
+    // Insert summary into Supabase
+    const { error: insertError } = await supabase.from('summaries').upsert({
+      meeting_id: meetingId,
+      content: parsed.content || content,
+      key_points: parsed.key_points || [],
+      generated_at: new Date().toISOString(),
+    }, { onConflict: 'meeting_id' })
+
+    if (insertError) {
+      console.error('Insert summary error:', insertError)
+    }
+
+    await supabase.from('meetings').update({ status: 'summarized' }).eq('id', meetingId)
+
     return new Response(
-      JSON.stringify({ error: 'DEEPSEEK_API_KEY not set' }),
+      JSON.stringify({
+        status: 'completed',
+        content: parsed.content || content,
+        keyPoints: parsed.key_points || [],
+      }),
+      { headers: { 'Content-Type': 'application/json' } }
+    )
+  } catch (e) {
+    console.error('Summarize error:', e)
+    return new Response(
+      JSON.stringify({ error: e.message }),
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     )
   }
-
-  // TODO: Call DeepSeek API for summary + key points
-  // TODO: Insert summary
-  // TODO: Update meeting.status to 'summarized'
-
-  return new Response(
-    JSON.stringify({ status: 'stub', transcriptLength: transcript?.length, meetingId }),
-    { headers: { 'Content-Type': 'application/json' } }
-  )
 })

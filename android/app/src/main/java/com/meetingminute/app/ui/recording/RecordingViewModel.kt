@@ -50,15 +50,9 @@ class RecordingViewModel @Inject constructor(
         val file = audioRecorder.getOutputFile()
 
         if (file != null) {
-            viewModelScope.launch {
-                val meeting = meetingRepository.createMeeting(
-                    title = "Meeting ${System.currentTimeMillis()}",
-                    localAudioPath = file.absolutePath
-                )
-                meetingRepository.uploadAudio(meeting.id).onSuccess { audioUrl ->
-                    meetingRepository.transcribeMeeting(meeting.id, audioUrl)
-                }
-            }
+            // processRecording handles the full upload→transcribe→summarize pipeline
+            // in a repository-scoped coroutine that survives navigation
+            meetingRepository.processRecording(file.absolutePath)
         }
 
         onNavigateBack()

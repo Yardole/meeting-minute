@@ -21,4 +21,10 @@ interface ChatMessageDao {
 
     @Query("SELECT * FROM chat_messages WHERE deletedAt IS NULL AND updatedAt > :since")
     suspend fun getChangedSince(since: Long): List<ChatMessageEntity>
+
+    @Query("SELECT * FROM chat_messages")
+    suspend fun getAllForSync(): List<ChatMessageEntity>
+
+    @Query("DELETE FROM chat_messages")
+    suspend fun deleteAll()
 }

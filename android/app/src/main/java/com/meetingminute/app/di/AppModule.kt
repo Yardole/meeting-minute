@@ -6,8 +6,10 @@ import com.meetingminute.app.data.audio.AudioPlayer
 import com.meetingminute.app.data.local.MeetingMinuteDatabase
 import com.meetingminute.app.data.remote.SupabaseClientProvider
 import com.meetingminute.app.data.remote.SupabaseConfig
+import com.meetingminute.app.data.remote.SupabaseEdgeFunctionClient
 import com.meetingminute.app.data.remote.SupabaseStorageClient
 import com.meetingminute.app.data.repository.MeetingRepositoryImpl
+import com.meetingminute.app.data.sync.SyncManager
 import com.meetingminute.app.domain.repository.MeetingRepository
 import dagger.Module
 import dagger.Provides
@@ -29,7 +31,9 @@ object AppModule {
             context,
             MeetingMinuteDatabase::class.java,
             "meeting_minute.db"
-        ).build()
+        )
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides
@@ -40,9 +44,15 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideSupabaseStorageClient(
+    fun provideSupabaseEdgeFunctionClient(
         config: SupabaseConfig
-    ): SupabaseStorageClient = SupabaseStorageClient(config)
+    ): SupabaseEdgeFunctionClient = SupabaseEdgeFunctionClient(config)
+
+    @Provides
+    @Singleton
+    fun provideSupabaseStorageClient(
+        edgeFunctionClient: SupabaseEdgeFunctionClient
+    ): SupabaseStorageClient = SupabaseStorageClient(edgeFunctionClient)
 
     @Provides
     @Singleton
@@ -55,4 +65,11 @@ object AppModule {
     fun provideAudioPlayer(): AudioPlayer {
         return AudioPlayer()
     }
+
+    @Provides
+    @Singleton
+    fun provideSyncManager(
+        database: MeetingMinuteDatabase,
+        edgeFunctionClient: SupabaseEdgeFunctionClient
+    ): SyncManager = SyncManager(database, edgeFunctionClient)
 }

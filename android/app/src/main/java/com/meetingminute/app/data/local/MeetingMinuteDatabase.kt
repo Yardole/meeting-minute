@@ -25,7 +25,7 @@ import com.meetingminute.app.data.local.entity.TranscriptSegmentEntity
         SummaryEntity::class,
         ChatMessageEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

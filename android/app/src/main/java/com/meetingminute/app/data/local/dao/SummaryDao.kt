@@ -22,4 +22,10 @@ interface SummaryDao {
 
     @Query("SELECT * FROM summaries WHERE deletedAt IS NULL AND updatedAt > :since")
     suspend fun getChangedSince(since: Long): List<SummaryEntity>
+
+    @Query("SELECT * FROM summaries")
+    suspend fun getAllForSync(): List<SummaryEntity>
+
+    @Query("DELETE FROM summaries")
+    suspend fun deleteAll()
 }
