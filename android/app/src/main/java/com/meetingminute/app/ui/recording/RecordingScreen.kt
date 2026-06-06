@@ -60,10 +60,29 @@ fun RecordingScreen(
     val processingProgress by viewModel.processingProgress.collectAsState()
     val navigateToMeetingId by viewModel.navigateToMeetingId.collectAsState()
     val tooShort by viewModel.tooShort.collectAsState()
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
-    // Auto-navigate when processing completes
+    // Haptic: recording started
+    LaunchedEffect(isRecording) {
+        if (isRecording) {
+            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+        }
+    }
+
+    // Haptic: recording stopped, processing begins
+    var wasProcessing by remember { mutableStateOf(false) }
+    LaunchedEffect(processingStatus) {
+        val nowProcessing = processingStatus.isNotEmpty()
+        if (nowProcessing && !wasProcessing) {
+            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+        }
+        wasProcessing = nowProcessing
+    }
+
+    // Auto-navigate when processing completes — with success haptic
     LaunchedEffect(navigateToMeetingId) {
         navigateToMeetingId?.let { id ->
+            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
             viewModel.onNavigated()
             onNavigateToMeeting(id)
         }

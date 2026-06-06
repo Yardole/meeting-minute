@@ -75,6 +75,7 @@ fun MeetingDetailScreen(
     val isSending by viewModel.isSending.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Minutes", "Transcript", "Chat")
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
     // Speaker rename dialog state
     var renameSpeakerId by remember { mutableStateOf<UUID?>(null) }
@@ -103,6 +104,7 @@ fun MeetingDetailScreen(
             confirmButton = {
                 TextButton(onClick = {
                     renameSpeakerId?.let { viewModel.renameSpeaker(it, renameText) }
+                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                     renameSpeakerId = null
                 }) {
                     Text("Save")
@@ -182,7 +184,7 @@ fun MeetingDetailScreen(
                             currentPositionMs = currentPosition,
                             durationMs = duration,
                             isPlaying = isPlaying,
-                            onPlayPause = { viewModel.togglePlayback() },
+                            onPlayPause = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove); viewModel.togglePlayback() },
                             onSeekBack = { viewModel.seekTo((currentPosition - 10000).coerceAtLeast(0)) },
                             onSeekForward = { viewModel.seekTo((currentPosition + 10000).coerceAtMost(duration)) },
                             speed = speed,
@@ -210,7 +212,7 @@ fun MeetingDetailScreen(
                                             if (isActive) MaterialTheme.colorScheme.primary
                                             else Color.Transparent
                                         )
-                                        .clickable { selectedTab = index }
+                                        .clickable { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove); selectedTab = index }
                                         .padding(horizontal = 14.dp, vertical = 6.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -231,7 +233,7 @@ fun MeetingDetailScreen(
                             1 -> TranscriptTab(
                                 segments = segments,
                                 speakers = speakers,
-                                onTimeClick = { viewModel.seekTo(it) },
+                                onTimeClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove); viewModel.seekTo(it) },
                                 onRenameSpeaker = { speakerId ->
                                     val spk = speakers.find { it.id == speakerId }
                                     renameText = spk?.name ?: spk?.label ?: ""
@@ -254,7 +256,7 @@ fun MeetingDetailScreen(
                     currentPositionMs = currentPosition,
                     durationMs = duration,
                     isPlaying = isPlaying,
-                    onPlayPause = { viewModel.togglePlayback() },
+                    onPlayPause = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove); viewModel.togglePlayback() },
                     onSeekBack = { viewModel.seekTo((currentPosition - 10000).coerceAtLeast(0)) },
                     onSeekForward = { viewModel.seekTo((currentPosition + 10000).coerceAtMost(duration)) },
                     speed = speed,
@@ -279,7 +281,7 @@ fun MeetingDetailScreen(
                                     if (isActive) MaterialTheme.colorScheme.primary
                                     else Color.Transparent
                                 )
-                                .clickable { selectedTab = index }
+                                .clickable { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove); selectedTab = index }
                                 .padding(horizontal = 14.dp, vertical = 6.dp),
                             contentAlignment = Alignment.Center
                         ) {
@@ -300,7 +302,7 @@ fun MeetingDetailScreen(
                     1 -> TranscriptTab(
                         segments = segments,
                         speakers = speakers,
-                        onTimeClick = { viewModel.seekTo(it) },
+                        onTimeClick = { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove); viewModel.seekTo(it) },
                         onRenameSpeaker = { speakerId ->
                             val spk = speakers.find { it.id == speakerId }
                             renameText = spk?.name ?: spk?.label ?: ""
@@ -459,6 +461,7 @@ private fun ChatTab(
     onSend: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
+        val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
         // Message area — blends into the page background
         Box(
             modifier = Modifier
@@ -549,7 +552,7 @@ private fun ChatTab(
                         if (inputText.isBlank() || isSending) MaterialTheme.colorScheme.outline
                         else MaterialTheme.colorScheme.primary
                     )
-                    .clickable(enabled = inputText.isNotBlank() && !isSending) { onSend() },
+                    .clickable(enabled = inputText.isNotBlank() && !isSending) { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove); onSend() },
                 contentAlignment = Alignment.Center
             ) {
                 Text(
