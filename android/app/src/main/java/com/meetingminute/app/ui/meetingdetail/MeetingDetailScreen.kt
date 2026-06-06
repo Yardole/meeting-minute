@@ -464,7 +464,7 @@ private fun ChatTab(
                 state = listState,
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 4.dp),
+                    .padding(horizontal = 16.dp),
                 contentPadding = PaddingValues(
                     top = 12.dp,
                     bottom = 68.dp // clears the floating input bar
