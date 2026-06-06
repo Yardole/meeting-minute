@@ -408,11 +408,10 @@ private fun ChatTab(
             }
         }
 
-        // Input bar
+        // Input bar — blends into the page
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface)
                 .padding(horizontal = 12.dp, vertical = 8.dp)
                 .navigationBarsPadding(),
             verticalAlignment = Alignment.CenterVertically
