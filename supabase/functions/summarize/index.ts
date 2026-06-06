@@ -29,12 +29,15 @@ serve(async (req) => {
 
     await supabase.from('meetings').update({ status: 'summarizing' }).eq('id', meetingId)
 
-    const systemPrompt = `You are an expert meeting summarizer. Analyze the provided transcript and produce:
-1. A concise, well-structured summary covering key decisions, action items, and important discussion points.
-2. A list of key points (3-7 bullet points) highlighting the most important takeaways.
+    const systemPrompt = `You are an expert meeting assistant. Analyze the provided transcript and produce:
+
+1. A short, descriptive meeting title (5-8 words max) that captures the main topic.
+2. A concise, well-structured summary covering key decisions, action items, and important discussion points.
+3. A list of key points (3-7 bullet points) highlighting the most important takeaways.
 
 You must respond with a JSON object in this exact format:
 {
+  "title": "Short descriptive title here",
   "content": "Full meeting summary here...",
   "key_points": ["Key point 1", "Key point 2", "Key point 3"]
 }`
@@ -69,7 +72,7 @@ You must respond with a JSON object in this exact format:
     const content = data.choices?.[0]?.message?.content || ''
 
     // Parse the JSON response from DeepSeek
-    let parsed: { content: string; key_points: string[] }
+    let parsed: { title?: string; content: string; key_points: string[] }
     try {
       // Handle possible markdown code block wrapping
       const jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
@@ -78,6 +81,11 @@ You must respond with a JSON object in this exact format:
       // Fallback: treat entire response as summary content
       parsed = { content, key_points: [] }
     }
+
+    const title = parsed.title || 'Untitled Meeting'
+
+    // Update meeting title in Supabase
+    await supabase.from('meetings').update({ title }).eq('id', meetingId)
 
     // Insert summary into Supabase
     const { error: insertError } = await supabase.from('summaries').upsert({
@@ -91,11 +99,12 @@ You must respond with a JSON object in this exact format:
       console.error('Insert summary error:', insertError)
     }
 
-    await supabase.from('meetings').update({ status: 'summarized' }).eq('id', meetingId)
+    await supabase.from('meetings').update({ status: 'summarized', title }).eq('id', meetingId)
 
     return new Response(
       JSON.stringify({
         status: 'completed',
+        title,
         content: parsed.content || content,
         keyPoints: parsed.key_points || [],
       }),

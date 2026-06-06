@@ -275,6 +275,7 @@ class MeetingRepositoryImpl @Inject constructor(
         return edgeFunctionClient.call("summarize", payload, readTimeout = 120_000)
             .map { json ->
                 val content = json.getString("content")
+                val title = json.optString("title", null)
                 val keyPoints = json.optJSONArray("keyPoints")?.let { arr ->
                     (0 until arr.length()).map { arr.getString(it) }
                 } ?: emptyList()
@@ -287,13 +288,18 @@ class MeetingRepositoryImpl @Inject constructor(
                 )
                 database.summaryDao().insert(summaryEntity)
 
-                database.meetingDao().getById(meetingId)?.let { e ->
+                val updatedEntity = database.meetingDao().getById(meetingId)
+                updatedEntity?.let { e ->
                     database.meetingDao().update(
-                        e.copy(status = MeetingStatus.SUMMARIZED, updatedAt = Instant.now())
+                        e.copy(
+                            status = MeetingStatus.SUMMARIZED,
+                            title = if (!title.isNullOrBlank()) title else e.title,
+                            updatedAt = Instant.now()
+                        )
                     )
                 }
 
-                Log.d("MeetingRepo", "Summary saved for meeting $meetingId")
+                Log.d("MeetingRepo", "Summary saved for meeting $meetingId (title: ${title ?: "unchanged"})")
                 content
             }.onFailure { e ->
                 Log.e("MeetingRepo", "Summarization error", e)
