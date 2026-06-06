@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -158,18 +159,25 @@ fun MeetingDetailScreen(
             if (isLandscape) {
                 // Landscape: player on left, tabs + content on right
                 Row(modifier = Modifier.fillMaxSize()) {
-                    // Left: player
-                    BottomPlayer(
-                        modifier = Modifier.weight(0.4f),
-                        currentPositionMs = currentPosition,
-                        durationMs = duration,
-                        isPlaying = isPlaying,
-                        onPlayPause = { viewModel.togglePlayback() },
-                        onSeekBack = { viewModel.seekTo((currentPosition - 10000).coerceAtLeast(0)) },
-                        onSeekForward = { viewModel.seekTo((currentPosition + 10000).coerceAtMost(duration)) },
-                        speed = speed,
-                        onSpeedChange = { viewModel.cycleSpeed() }
-                    )
+                    // Left: player — vertically centered, fills height
+                    Box(
+                        modifier = Modifier
+                            .weight(0.4f)
+                            .fillMaxHeight(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        BottomPlayer(
+                            modifier = Modifier.fillMaxWidth(),
+                            currentPositionMs = currentPosition,
+                            durationMs = duration,
+                            isPlaying = isPlaying,
+                            onPlayPause = { viewModel.togglePlayback() },
+                            onSeekBack = { viewModel.seekTo((currentPosition - 10000).coerceAtLeast(0)) },
+                            onSeekForward = { viewModel.seekTo((currentPosition + 10000).coerceAtMost(duration)) },
+                            speed = speed,
+                            onSpeedChange = { viewModel.cycleSpeed() }
+                        )
+                    }
 
                     // Right: tabs + content
                     Column(modifier = Modifier.weight(0.6f)) {
