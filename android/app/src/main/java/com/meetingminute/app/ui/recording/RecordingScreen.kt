@@ -314,8 +314,8 @@ private fun RecordingActiveScreen(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
+                            .size(34.dp)
+                            .clip(RoundedCornerShape(6.dp))
                             .background(MaterialTheme.colorScheme.background)
                     )
                 }
