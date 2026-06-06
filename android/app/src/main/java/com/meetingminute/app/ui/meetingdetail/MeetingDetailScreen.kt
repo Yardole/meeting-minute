@@ -515,7 +515,7 @@ private fun ChatTab(
                     .size(40.dp)
                     .clip(CircleShape)
                     .background(
-                        if (inputText.isBlank() || isSending) MaterialTheme.colorScheme.outline
+                        if (inputText.isBlank() || isSending) MaterialTheme.colorScheme.secondaryContainer
                         else MaterialTheme.colorScheme.primary
                     )
                     .clickable(enabled = inputText.isNotBlank() && !isSending) { haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove); onSend() },
@@ -524,7 +524,9 @@ private fun ChatTab(
                 Text(
                     text = if (isSending) "..." else "→",
                     style = MaterialTheme.typography.labelLarge.copy(
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = if (inputText.isBlank() || isSending)
+                            MaterialTheme.colorScheme.onSecondaryContainer
+                        else MaterialTheme.colorScheme.onPrimary,
                         fontSize = 16.sp
                     )
                 )
