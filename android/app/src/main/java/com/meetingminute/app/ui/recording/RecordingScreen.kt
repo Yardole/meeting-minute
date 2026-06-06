@@ -3,11 +3,13 @@ package com.meetingminute.app.ui.recording
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.border
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -237,21 +239,34 @@ private fun RecordingActiveScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            // Ripples + button stacked together
             Box(
-                modifier = Modifier
-                    .size(140.dp)
-                    .scale(pulseScale)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.error)
-                    .clickable { onStopRecording() },
+                modifier = Modifier.size(140.dp),
                 contentAlignment = Alignment.Center
             ) {
+                // Ripple waves behind the button
+                RecordingRipples(
+                    color = MaterialTheme.colorScheme.error,
+                    baseSizeDp = 140
+                )
+
+                // Pulsing record button on top
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
+                        .size(140.dp)
+                        .scale(pulseScale)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.background)
-                )
+                        .background(MaterialTheme.colorScheme.error)
+                        .clickable { onStopRecording() },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.background)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(40.dp))
@@ -275,6 +290,53 @@ private fun RecordingActiveScreen(
                 )
             )
         }
+    }
+}
+
+@Composable
+private fun RecordingRipples(
+    color: androidx.compose.ui.graphics.Color,
+    baseSizeDp: Int
+) {
+    val rippleTransition = rememberInfiniteTransition(label = "ripples")
+
+    val rippleCount = 3
+    val cycleMs = 2100
+
+    for (i in 0 until rippleCount) {
+        val delayMs = i * (cycleMs / rippleCount)
+
+        val scale by rippleTransition.animateFloat(
+            initialValue = 1.0f,
+            targetValue = 4.0f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(cycleMs, easing = LinearEasing, delayMillis = delayMs),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "rippleScale$i"
+        )
+
+        val alpha by rippleTransition.animateFloat(
+            initialValue = 0.45f,
+            targetValue = 0.0f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(cycleMs, easing = LinearEasing, delayMillis = delayMs),
+                repeatMode = RepeatMode.Restart
+            ),
+            label = "rippleAlpha$i"
+        )
+
+        Box(
+            modifier = Modifier
+                .size(baseSizeDp.dp)
+                .scale(scale)
+                .clip(CircleShape)
+                .border(
+                    width = 1.5.dp,
+                    color = color.copy(alpha = alpha),
+                    shape = CircleShape
+                )
+        )
     }
 }
 
