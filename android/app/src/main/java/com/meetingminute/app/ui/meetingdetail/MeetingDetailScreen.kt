@@ -657,7 +657,10 @@ private fun AnimatedTabRow(
                                 )
                             }
                         }
-                        .clickable {
+                        .clickable(
+                            indication = null,
+                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                        ) {
                             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
                             onTabClick(index)
                         }
