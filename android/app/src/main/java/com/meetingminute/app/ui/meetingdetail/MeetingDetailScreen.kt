@@ -472,11 +472,14 @@ private fun ChatTab(
                 }
             } else {
                 val listState = rememberLazyListState()
+                var prevSize by remember { mutableIntStateOf(0) }
 
                 LaunchedEffect(messages.size) {
-                    if (messages.isNotEmpty()) {
+                    val isNewMessage = messages.size > prevSize
+                    prevSize = messages.size
+
+                    if (isNewMessage && messages.isNotEmpty()) {
                         val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-                        // Only auto-scroll if user is near the bottom (last 2 items visible)
                         if (lastVisible >= messages.size - 3) {
                             listState.animateScrollToItem(messages.size - 1)
                         }
