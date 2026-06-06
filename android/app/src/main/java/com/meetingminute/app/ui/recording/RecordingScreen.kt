@@ -31,7 +31,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,12 +64,12 @@ fun RecordingScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFF1C1C1E)),
+                .background(MaterialTheme.colorScheme.background),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "Microphone permission required",
-                color = Color.White
+                color = MaterialTheme.colorScheme.onBackground
             )
         }
         return
@@ -90,7 +89,7 @@ fun RecordingScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF1C1C1E))
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -102,7 +101,7 @@ fun RecordingScreen(
                     .size(140.dp)
                     .scale(pulseScale)
                     .clip(CircleShape)
-                    .background(Color(0xFFFF3B30))
+                    .background(MaterialTheme.colorScheme.error)
                     .clickable { viewModel.stopRecording { onStop() } },
                 contentAlignment = Alignment.Center
             ) {
@@ -110,7 +109,7 @@ fun RecordingScreen(
                     modifier = Modifier
                         .size(38.dp)
                         .clip(CircleShape)
-                        .background(Color.White)
+                        .background(MaterialTheme.colorScheme.onBackground)
                 )
             }
 
@@ -121,7 +120,7 @@ fun RecordingScreen(
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontSize = 48.sp,
                     fontWeight = FontWeight.Light,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             )
 
@@ -130,7 +129,7 @@ fun RecordingScreen(
             Text(
                 text = "Tap to stop",
                 style = MaterialTheme.typography.bodyLarge.copy(
-                    color = Color(0x66FFFFFF),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 14.sp
                 )
             )

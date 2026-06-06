@@ -6,46 +6,47 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
-private val LightColorScheme = lightColorScheme(
-    primary = Primary,
-    onPrimary = OnPrimary,
-    primaryContainer = PrimaryContainer,
-    onPrimaryContainer = OnPrimaryContainer,
-    secondary = Secondary,
-    onSecondary = OnSecondary,
-    background = Background,
-    onBackground = OnBackground,
-    surface = Surface,
-    onSurface = OnSurface,
-    onSurfaceVariant = OnSurfaceVariant,
-    outline = Outline
+// Warm Editorial — adapted from recipe-manager DESIGN.md.
+// Olive #6E7A45 as primary accent on warm paper #FBF7F0.
+// Fraunces for titles, DM Sans for body (set via AppTypography).
+// Dark scheme is provisional.
+
+private val LightColors = lightColorScheme(
+    primary = WarmOlive,
+    onPrimary = WarmCard,
+    secondaryContainer = WarmOliveSoft,
+    onSecondaryContainer = WarmOlive,
+    background = WarmPaper,
+    onBackground = WarmInk,
+    surface = WarmCard,
+    onSurface = WarmInk,
+    onSurfaceVariant = WarmMuted,
+    outline = WarmLine,
+    error = WarmError,
 )
 
-private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryDark,
-    onPrimary = OnPrimaryDark,
-    primaryContainer = PrimaryDark,
-    onPrimaryContainer = OnPrimaryDark,
-    secondary = Secondary,
-    onSecondary = OnSecondary,
-    background = BackgroundDark,
-    onBackground = OnBackgroundDark,
-    surface = SurfaceDark,
-    onSurface = OnSurfaceDark,
-    onSurfaceVariant = OnSurfaceVariantDark,
-    outline = OutlineDark
+private val DarkColors = darkColorScheme(
+    primary = WarmOliveDark,
+    onPrimary = WarmPaperDark,
+    secondaryContainer = WarmOliveSoftDark,
+    onSecondaryContainer = WarmOliveDark,
+    background = WarmPaperDark,
+    onBackground = WarmInkDark,
+    surface = WarmCardDark,
+    onSurface = WarmInkDark,
+    onSurfaceVariant = WarmMutedDark,
+    outline = WarmLineDark,
+    error = WarmError,
 )
 
 @Composable
 fun MeetingMinuteTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
-
     MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
+        colorScheme = if (darkTheme) DarkColors else LightColors,
+        typography = AppTypography,
+        content = content,
     )
 }

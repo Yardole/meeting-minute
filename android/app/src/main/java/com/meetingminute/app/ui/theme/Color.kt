@@ -2,30 +2,29 @@ package com.meetingminute.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Light theme
-val Primary = Color(0xFF007AFF)
-val OnPrimary = Color(0xFFFFFFFF)
-val PrimaryContainer = Color(0xFF007AFF)
-val OnPrimaryContainer = Color(0xFFFFFFFF)
+// Warm Editorial palette — mirrors the recipe-manager DESIGN.md.
+// Used via MeetingMinuteTheme; these constants exist so individual screens
+// can reference specific palette values when MaterialTheme tokens aren't enough.
 
-val Secondary = Color(0xFF5856D6)
-val OnSecondary = Color(0xFFFFFFFF)
+// Light
+val WarmPaper = Color(0xFFFBF7F0)
+val WarmCard = Color(0xFFFFFDF9)
+val WarmInk = Color(0xFF2A241E)
+val WarmMuted = Color(0xFF8A8175)
+val WarmLine = Color(0xFFE9E1D4)
+val WarmOlive = Color(0xFF6E7A45)
+val WarmOliveSoft = Color(0xFFE6E8CE)
+val WarmSaffron = Color(0xFFE2A03F)
+val WarmHerb = Color(0xFF5B8A5A)
+val WarmAmber = Color(0xFFD9952F)
+val WarmError = Color(0xFFC0492F)
+val RecordingRed = Color(0xFFC0492F)  // warm error-red for recording indicator
 
-val Background = Color(0xFFFFFFFF)
-val OnBackground = Color(0xFF000000)
-
-val Surface = Color(0xFFF2F2F7)
-val OnSurface = Color(0xFF000000)
-val OnSurfaceVariant = Color(0xFF8E8E93)
-
-val Outline = Color(0xFFE5E5EA)
-
-// Dark theme
-val PrimaryDark = Color(0xFF0A84FF)
-val OnPrimaryDark = Color(0xFFFFFFFF)
-val BackgroundDark = Color(0xFF000000)
-val OnBackgroundDark = Color(0xFFFFFFFF)
-val SurfaceDark = Color(0xFF1C1C1E)
-val OnSurfaceDark = Color(0xFFFFFFFF)
-val OnSurfaceVariantDark = Color(0xFF8E8E93)
-val OutlineDark = Color(0xFF38383A)
+// Dark (provisional)
+val WarmPaperDark = Color(0xFF252525)
+val WarmCardDark = Color(0xFF2E2E2E)
+val WarmInkDark = Color(0xFFF2ECE3)
+val WarmMutedDark = Color(0xFFA8A296)
+val WarmLineDark = Color(0xFF3A3A3A)
+val WarmOliveDark = Color(0xFFAAB477)
+val WarmOliveSoftDark = Color(0xFF343628)
