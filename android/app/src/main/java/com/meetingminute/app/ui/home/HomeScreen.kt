@@ -44,9 +44,11 @@ import com.meetingminute.app.domain.model.Meeting
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.animation.ExperimentalSharedTransitionApi::class)
 @Composable
 fun HomeScreen(
+    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
+    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope,
     onMeetingClick: (String) -> Unit,
     onRecordClick: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
@@ -55,17 +57,23 @@ fun HomeScreen(
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onRecordClick,
-                shape = CircleShape,
-                containerColor = MaterialTheme.colorScheme.error
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Mic,
-                    contentDescription = "Record meeting",
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(28.dp)
-                )
+            with(sharedTransitionScope) {
+                FloatingActionButton(
+                    onClick = onRecordClick,
+                    shape = CircleShape,
+                    containerColor = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.sharedBounds(
+                        rememberSharedContentState(key = "record-btn"),
+                        animatedVisibilityScope = animatedVisibilityScope
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Mic,
+                        contentDescription = "Record meeting",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
         }
     ) { padding ->

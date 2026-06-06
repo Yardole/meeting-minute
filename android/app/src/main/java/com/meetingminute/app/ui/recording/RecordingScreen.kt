@@ -45,8 +45,11 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.delay
 
+@OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
 @Composable
 fun RecordingScreen(
+    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
+    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope,
     onNavigateToMeeting: (String) -> Unit,
     onNavigateHome: () -> Unit,
     viewModel: RecordingViewModel = hiltViewModel()
@@ -75,7 +78,9 @@ fun RecordingScreen(
         RecordingActiveScreen(
             elapsedMs = elapsedMs,
             onStartRecording = { viewModel.startRecording() },
-            onStopRecording = { viewModel.stopRecording() }
+            onStopRecording = { viewModel.stopRecording() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope
         )
     }
 }
@@ -202,11 +207,14 @@ private fun ProcessingScreen(
     }
 }
 
+@OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
 @Composable
 private fun RecordingActiveScreen(
     elapsedMs: Long,
     onStartRecording: () -> Unit,
-    onStopRecording: () -> Unit
+    onStopRecording: () -> Unit,
+    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope,
+    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope
 ) {
     var hasPermission by remember { mutableStateOf(false) }
 
@@ -262,11 +270,17 @@ private fun RecordingActiveScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Ripples + button stacked together
-            Box(
-                modifier = Modifier.size(140.dp),
-                contentAlignment = Alignment.Center
-            ) {
+            // Ripples + button stacked together — shared element from FAB
+            with(sharedTransitionScope) {
+                Box(
+                    modifier = Modifier
+                        .size(140.dp)
+                        .sharedBounds(
+                            rememberSharedContentState(key = "record-btn"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
                 // Ripple waves behind the button
                 RecordingRipples(
                     color = MaterialTheme.colorScheme.error,
@@ -291,6 +305,7 @@ private fun RecordingActiveScreen(
                     )
                 }
             }
+            } // end with(sharedTransitionScope)
 
             Spacer(modifier = Modifier.height(40.dp))
 
