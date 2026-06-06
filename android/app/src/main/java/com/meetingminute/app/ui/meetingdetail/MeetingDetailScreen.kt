@@ -492,69 +492,51 @@ private fun ChatTab(
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 8.dp)
                 .navigationBarsPadding(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            // Single pill: field + send button inline
-            Row(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(24.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(start = 16.dp, end = 4.dp, top = 4.dp, bottom = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                BasicTextField(
-                    value = inputText,
-                    onValueChange = onInputChanged,
-                    modifier = Modifier
-                        .weight(1f, fill = false)
-                        .widthIn(max = 220.dp),
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 14.sp
-                    ),
-                    decorationBox = @Composable { innerTextField ->
-                        Box {
-                            if (inputText.isEmpty()) {
-                                Text(
-                                    "Ask about this meeting...",
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        fontSize = 14.sp
-                                    )
-                                )
-                            }
-                            innerTextField()
-                        }
-                    }
-                )
-
-                Box(
-                    modifier = Modifier
-                        .size(36.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (inputText.isBlank() || isSending) Color.Transparent
-                            else MaterialTheme.colorScheme.primary
-                        )
-                        .clickable(enabled = inputText.isNotBlank() && !isSending) {
-                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                            onSend()
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
+            OutlinedTextField(
+                value = inputText,
+                onValueChange = onInputChanged,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = {
                     Text(
-                        text = if (isSending) "..." else "→",
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            color = if (inputText.isBlank() || isSending)
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            else MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 16.sp
-                        )
+                        "Ask about this meeting...",
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp)
                     )
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(24.dp),
+                colors = TextFieldDefaults.colors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
+                trailingIcon = {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(
+                                if (inputText.isBlank() || isSending) MaterialTheme.colorScheme.secondaryContainer
+                                else MaterialTheme.colorScheme.primary
+                            )
+                            .clickable(enabled = inputText.isNotBlank() && !isSending) {
+                                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                                onSend()
+                            },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (isSending) "..." else "→",
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                color = if (inputText.isBlank() || isSending)
+                                    MaterialTheme.colorScheme.onSecondaryContainer
+                                else MaterialTheme.colorScheme.onPrimary,
+                                fontSize = 16.sp
+                            )
+                        )
+                    }
                 }
-            }
+            )
         }
     }
 }
