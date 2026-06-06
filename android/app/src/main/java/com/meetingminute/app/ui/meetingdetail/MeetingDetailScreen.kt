@@ -111,21 +111,7 @@ fun MeetingDetailScreen(
         )
     }
 
-    Scaffold(
-        bottomBar = {
-            BottomPlayer(
-                modifier = Modifier.navigationBarsPadding(),
-                currentPositionMs = currentPosition,
-                durationMs = duration,
-                isPlaying = isPlaying,
-                onPlayPause = { viewModel.togglePlayback() },
-                onSeekBack = { viewModel.seekTo((currentPosition - 10000).coerceAtLeast(0)) },
-                onSeekForward = { viewModel.seekTo((currentPosition + 10000).coerceAtMost(duration)) },
-                speed = speed,
-                onSpeedChange = { viewModel.cycleSpeed() }
-            )
-        }
-    ) { padding ->
+    Scaffold { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -161,6 +147,18 @@ fun MeetingDetailScreen(
                 text = meeting?.title ?: "Meeting",
                 style = MaterialTheme.typography.headlineLarge.copy(fontSize = 22.sp),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+            )
+
+            // Player right under the title
+            BottomPlayer(
+                currentPositionMs = currentPosition,
+                durationMs = duration,
+                isPlaying = isPlaying,
+                onPlayPause = { viewModel.togglePlayback() },
+                onSeekBack = { viewModel.seekTo((currentPosition - 10000).coerceAtLeast(0)) },
+                onSeekForward = { viewModel.seekTo((currentPosition + 10000).coerceAtMost(duration)) },
+                speed = speed,
+                onSpeedChange = { viewModel.cycleSpeed() }
             )
 
             Row(
