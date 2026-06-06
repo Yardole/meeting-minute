@@ -114,16 +114,13 @@ fun MeetingDetailScreen(
     }
 
     Scaffold { padding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(padding)
                 .statusBarsPadding()
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize()
-            ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -166,6 +163,38 @@ fun MeetingDetailScreen(
                 onSpeedChange = { viewModel.cycleSpeed() }
             )
 
+            // Tabs between player and content
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                tabs.forEachIndexed { index, title ->
+                    val isActive = index == selectedTab
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                if (isActive) MaterialTheme.colorScheme.primary
+                                else Color.Transparent
+                            )
+                            .clickable { selectedTab = index }
+                            .padding(horizontal = 14.dp, vertical = 6.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                color = if (isActive) MaterialTheme.colorScheme.onPrimary
+                                else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 13.sp
+                            )
+                        )
+                    }
+                }
+            }
+
             when (selectedTab) {
                 0 -> MinutesTab(meeting, summary)
                 1 -> TranscriptTab(
@@ -187,45 +216,6 @@ fun MeetingDetailScreen(
                 )
             }
         }
-
-        // Floating tab bar at the bottom
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp, start = 40.dp, end = 40.dp)
-                .navigationBarsPadding()
-                .clip(RoundedCornerShape(20.dp))
-                .background(MaterialTheme.colorScheme.surface)
-                .padding(horizontal = 8.dp, vertical = 6.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                tabs.forEachIndexed { index, title ->
-                    val isActive = index == selectedTab
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(
-                                if (isActive) MaterialTheme.colorScheme.primary
-                                else Color.Transparent
-                            )
-                            .clickable { selectedTab = index }
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = title,
-                            style = MaterialTheme.typography.labelLarge.copy(
-                                color = if (isActive) MaterialTheme.colorScheme.onPrimary
-                                else MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 13.sp
-                            )
-                        )
-                    }
-                }
-            }
-        }
-    }
     }
 }
 
@@ -235,8 +225,7 @@ private fun MinutesTab(meeting: Meeting?, summary: String?) {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp),
-            contentPadding = PaddingValues(bottom = 72.dp)
+                .padding(horizontal = 16.dp)
         ) {
             item {
                 Text(
@@ -307,8 +296,7 @@ private fun TranscriptTab(
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp),
-        contentPadding = PaddingValues(bottom = 72.dp)
+            .padding(horizontal = 16.dp)
     ) {
         itemsIndexed(segments) { _, segment ->
             Column(modifier = Modifier.padding(vertical = 8.dp)) {
@@ -369,11 +357,7 @@ private fun ChatTab(
     onInputChanged: (String) -> Unit,
     onSend: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(bottom = 72.dp) // clear the floating tab bar
-    ) {
+    Column(modifier = Modifier.fillMaxSize()) {
         // Message area wrapped in a rounded card
         Box(
             modifier = Modifier
