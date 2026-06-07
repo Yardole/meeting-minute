@@ -2,6 +2,8 @@ package com.meetingminute.app.ui.home
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -50,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -99,15 +102,20 @@ fun HomeScreen(
                         horizontalAlignment = Alignment.End,
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Import button
-                        FloatingActionButton(
-                            onClick = {
-                                expanded = false
-                                importLauncher.launch(arrayOf("audio/*"))
-                            },
-                            shape = CircleShape,
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            modifier = Modifier.size(48.dp)
+                        // Import button — no ripple
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.secondaryContainer)
+                                .clickable(
+                                    indication = null,
+                                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                                ) {
+                                    expanded = false
+                                    importLauncher.launch(arrayOf("audio/*"))
+                                },
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = Icons.Default.AudioFile,
@@ -117,21 +125,25 @@ fun HomeScreen(
                             )
                         }
 
-                        // Record button — shared element to recording screen
+                        // Record button — shared element + no ripple
                         with(sharedTransitionScope) {
-                            FloatingActionButton(
-                                onClick = {
-                                    expanded = false
-                                    onRecordClick()
-                                },
-                                shape = CircleShape,
-                                containerColor = MaterialTheme.colorScheme.error,
+                            Box(
                                 modifier = Modifier
                                     .size(56.dp)
                                     .sharedBounds(
                                         rememberSharedContentState(key = "record-btn"),
                                         animatedVisibilityScope = animatedVisibilityScope
                                     )
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.error)
+                                    .clickable(
+                                        indication = null,
+                                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                                    ) {
+                                        expanded = false
+                                        onRecordClick()
+                                    },
+                                contentAlignment = Alignment.Center
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Mic,
@@ -144,17 +156,25 @@ fun HomeScreen(
                     }
                 }
 
-                // Main + FAB
+                // Main + FAB — morphs + ↔ × via rotation
+                val fabRotation by animateFloatAsState(
+                    targetValue = if (expanded) 45f else 0f,
+                    animationSpec = spring(dampingRatio = 0.6f, stiffness = 400f),
+                    label = "fabRotate"
+                )
+
                 FloatingActionButton(
                     onClick = { expanded = !expanded },
                     shape = CircleShape,
                     containerColor = MaterialTheme.colorScheme.primary
                 ) {
                     Icon(
-                        imageVector = if (expanded) Icons.Default.Close else Icons.Default.Add,
+                        imageVector = Icons.Default.Add,
                         contentDescription = if (expanded) "Close" else "New meeting",
                         tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier
+                            .size(28.dp)
+                            .rotate(fabRotation)
                     )
                 }
             }
