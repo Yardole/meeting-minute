@@ -62,6 +62,26 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    fun importAudio(uri: android.net.Uri, context: android.content.Context) {
+        viewModelScope.launch {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                    ?: return@launch
+                val fileName = "imported_${System.currentTimeMillis()}.m4a"
+                val destFile = java.io.File(context.filesDir, "recordings/$fileName").also {
+                    it.parentFile?.mkdirs()
+                }
+                destFile.outputStream().use { output ->
+                    inputStream.copyTo(output)
+                }
+                inputStream.close()
+                meetingRepository.processRecording(destFile.absolutePath)
+            } catch (e: Exception) {
+                android.util.Log.e("HomeVM", "Import failed", e)
+            }
+        }
+    }
+
     fun deleteMeeting(id: UUID) {
         viewModelScope.launch {
             meetingRepository.deleteMeeting(id)

@@ -29,6 +29,7 @@ import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AudioFile
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.FloatingActionButton
@@ -52,6 +53,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.meetingminute.app.domain.model.Meeting
@@ -71,6 +74,14 @@ fun HomeScreen(
     val meetings by viewModel.meetings.collectAsState()
 
     var expanded by remember { mutableStateOf(false) }
+
+    // Audio file import picker
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { viewModel.importAudio(it, context) }
+    }
 
     Scaffold(
         floatingActionButton = {
@@ -92,14 +103,14 @@ fun HomeScreen(
                         FloatingActionButton(
                             onClick = {
                                 expanded = false
-                                onImportClick()
+                                importLauncher.launch(arrayOf("audio/*"))
                             },
                             shape = CircleShape,
                             containerColor = MaterialTheme.colorScheme.secondaryContainer,
                             modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Add,
+                                imageVector = Icons.Default.AudioFile,
                                 contentDescription = "Import audio",
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier.size(24.dp)
