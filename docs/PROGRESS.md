@@ -81,6 +81,17 @@
 ### In Progress
 
 - [ ] `feat/morph-progress-ring`: circle morphs into progress bar (stashed, needs work)
+- [ ] FAB speed-dial animation: bounce needs more polish, especially on rapid toggle
+
+### 2026-06-07 (continued)
+
+- [x] Speed-dial FAB: "+" expands to reveal Record (mic) + Import (file) mini-FABs
+- [x] Mini-FABs emerge from behind main FAB with scale+slide spring animation
+- [x] "+" rotates 45° to "×" with spring bounce
+- [x] Audio file import via system file picker (audio/*)
+- [x] Main FAB tap bounce with Animatable snapTo + animateTo
+- [x] Pull-to-refresh on home screen triggers sync
+- [x] Editable meeting title with auto-focus and multiline support
 
 ### Commits
 
