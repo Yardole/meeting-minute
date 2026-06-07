@@ -3,6 +3,7 @@ package com.meetingminute.app.ui.home
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
@@ -53,6 +54,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,6 +66,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.meetingminute.app.domain.model.Meeting
@@ -196,25 +199,26 @@ fun HomeScreen(
                     label = "fabRotate"
                 )
 
-                var tapCount by remember { mutableIntStateOf(0) }
-                val fabScale by animateFloatAsState(
-                    targetValue = 1f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessLow
-                    ),
-                    label = "fabScale",
-                    finishedListener = { tapCount = 0 }
-                )
+                val fabScale = remember { Animatable(1f) }
+                val scope = rememberCoroutineScope()
 
                 FloatingActionButton(
                     onClick = {
                         expanded = !expanded
-                        tapCount++
+                        scope.launch {
+                            fabScale.snapTo(0.88f)
+                            fabScale.animateTo(
+                                1f,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessLow
+                                )
+                            )
+                        }
                     },
                     shape = CircleShape,
                     containerColor = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.scale(if (tapCount > 0) 0.88f else fabScale)
+                    modifier = Modifier.scale(fabScale.value)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
