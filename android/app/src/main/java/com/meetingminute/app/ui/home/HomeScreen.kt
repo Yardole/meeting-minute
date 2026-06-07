@@ -9,8 +9,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -105,13 +103,7 @@ fun HomeScreen(
                 AnimatedVisibility(
                     visible = expanded,
                     enter = slideInVertically(
-                        initialOffsetY = { it },
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow
-                        )
-                    ) + scaleIn(
-                        initialScale = 0.2f,
+                        initialOffsetY = { it / 2 },
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
                             stiffness = Spring.StiffnessLow
@@ -119,12 +111,6 @@ fun HomeScreen(
                     ) + fadeIn(animationSpec = tween(150)),
                     exit = slideOutVertically(
                         targetOffsetY = { it },
-                        animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessLow
-                        )
-                    ) + scaleOut(
-                        targetScale = 0.2f,
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
                             stiffness = Spring.StiffnessLow
@@ -140,18 +126,24 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.End,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .padding(end = 12.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(Color.Black.copy(alpha = 0.35f))
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            AnimatedVisibility(
+                                visible = expanded,
+                                enter = fadeIn(animationSpec = tween(300, delayMillis = 200)),
+                                exit = fadeOut(animationSpec = tween(100))
                             ) {
-                                Text(
-                                    text = "Import",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = Color.White
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .padding(end = 12.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(Color.Black.copy(alpha = 0.35f))
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = "Import",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = Color.White
+                                    )
+                                }
                             }
                             Box(
                                 modifier = Modifier
@@ -181,18 +173,24 @@ fun HomeScreen(
                             horizontalArrangement = Arrangement.End,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .padding(end = 12.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(Color.Black.copy(alpha = 0.35f))
-                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            AnimatedVisibility(
+                                visible = expanded,
+                                enter = fadeIn(animationSpec = tween(300, delayMillis = 250)),
+                                exit = fadeOut(animationSpec = tween(100))
                             ) {
-                                Text(
-                                    text = "Record",
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = Color.White
-                                )
+                                Box(
+                                    modifier = Modifier
+                                        .padding(end = 12.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(Color.Black.copy(alpha = 0.35f))
+                                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Text(
+                                        text = "Record",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = Color.White
+                                    )
+                                }
                             }
                             with(sharedTransitionScope) {
                                 Box(
@@ -279,17 +277,13 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            Box(
+            Text(
+                text = "Oliva",
+                style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 16.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = "Meetings",
-                    style = MaterialTheme.typography.headlineLarge.copy(fontSize = 20.sp)
-                )
-            }
+                    .padding(horizontal = 24.dp, vertical = 24.dp)
+            )
 
             val listState = rememberLazyListState()
             val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
