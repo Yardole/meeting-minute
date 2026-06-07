@@ -50,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -57,6 +58,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -184,7 +186,7 @@ fun HomeScreen(
                     }
                 }
 
-                // Main + FAB — morphs + ↔ × via rotation
+                // Main + FAB — morphs + ↔ × via rotation + tap bounce
                 val fabRotation by animateFloatAsState(
                     targetValue = if (expanded) 45f else 0f,
                     animationSpec = spring(
@@ -194,10 +196,25 @@ fun HomeScreen(
                     label = "fabRotate"
                 )
 
+                var tapCount by remember { mutableIntStateOf(0) }
+                val fabScale by animateFloatAsState(
+                    targetValue = 1f,
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessLow
+                    ),
+                    label = "fabScale",
+                    finishedListener = { tapCount = 0 }
+                )
+
                 FloatingActionButton(
-                    onClick = { expanded = !expanded },
+                    onClick = {
+                        expanded = !expanded
+                        tapCount++
+                    },
                     shape = CircleShape,
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.scale(if (tapCount > 0) 0.88f else fabScale)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
