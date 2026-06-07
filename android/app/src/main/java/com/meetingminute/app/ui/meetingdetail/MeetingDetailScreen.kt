@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -41,6 +43,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -60,6 +63,7 @@ import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -172,16 +176,54 @@ fun MeetingDetailScreen(
                 )
             }
 
-            Text(
-                text = meeting?.title ?: "Meeting",
-                style = MaterialTheme.typography.headlineLarge.copy(
-                    fontSize = if (isLandscape) 18.sp else 22.sp
-                ),
-                modifier = Modifier.padding(
-                    horizontal = 16.dp,
-                    vertical = if (isLandscape) 1.dp else 2.dp
+            // Editable title
+            var isEditing by remember { mutableStateOf(false) }
+            var editText by remember { mutableStateOf("") }
+            val titleFontSize = if (isLandscape) 18.sp else 22.sp
+            val titleVPadding = if (isLandscape) 1.dp else 2.dp
+
+            if (isEditing) {
+                BasicTextField(
+                    value = editText,
+                    onValueChange = { editText = it },
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.headlineLarge.copy(
+                        fontFamily = com.meetingminute.app.ui.theme.Fraunces,
+                        fontSize = titleFontSize,
+                        color = MaterialTheme.colorScheme.onBackground
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if (editText.isNotBlank()) {
+                                viewModel.updateTitle(editText)
+                            }
+                            isEditing = false
+                        }
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = titleVPadding)
                 )
-            )
+                // Auto-focus when entering edit mode
+                DisposableEffect(Unit) {
+                    onDispose { }
+                }
+            } else {
+                Text(
+                    text = meeting?.title ?: "Meeting",
+                    style = MaterialTheme.typography.headlineLarge.copy(
+                        fontFamily = com.meetingminute.app.ui.theme.Fraunces,
+                        fontSize = titleFontSize
+                    ),
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = titleVPadding)
+                        .clickable {
+                            editText = meeting?.title ?: ""
+                            isEditing = true
+                        }
+                )
+            }
 
             if (isLandscape) {
                 // Landscape: player on left, tabs + content on right
