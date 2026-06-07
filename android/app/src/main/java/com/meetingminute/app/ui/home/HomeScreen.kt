@@ -103,26 +103,26 @@ fun HomeScreen(
                         initialOffsetY = { it },
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium
+                            stiffness = Spring.StiffnessLow
                         )
                     ) + scaleIn(
                         initialScale = 0.2f,
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium
+                            stiffness = Spring.StiffnessLow
                         )
                     ) + fadeIn(animationSpec = tween(150)),
                     exit = slideOutVertically(
                         targetOffsetY = { it },
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium
+                            stiffness = Spring.StiffnessLow
                         )
                     ) + scaleOut(
                         targetScale = 0.2f,
                         animationSpec = spring(
                             dampingRatio = Spring.DampingRatioMediumBouncy,
-                            stiffness = Spring.StiffnessMedium
+                            stiffness = Spring.StiffnessLow
                         )
                     ) + fadeOut(animationSpec = tween(150))
                 ) {
@@ -189,7 +189,7 @@ fun HomeScreen(
                     targetValue = if (expanded) 45f else 0f,
                     animationSpec = spring(
                         dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium
+                        stiffness = Spring.StiffnessLow
                     ),
                     label = "fabRotate"
                 )
