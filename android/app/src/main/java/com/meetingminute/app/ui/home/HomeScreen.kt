@@ -1,6 +1,11 @@
 package com.meetingminute.app.ui.home
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +28,8 @@ import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -36,6 +43,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,25 +65,83 @@ fun HomeScreen(
     sharedTransitionScope: androidx.compose.animation.SharedTransitionScope,
     onMeetingClick: (String) -> Unit,
     onRecordClick: () -> Unit,
+    onImportClick: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val meetings by viewModel.meetings.collectAsState()
 
+    var expanded by remember { mutableStateOf(false) }
+
     Scaffold(
         floatingActionButton = {
-            with(sharedTransitionScope) {
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Mini FABs — slide up when expanded
+                AnimatedVisibility(
+                    visible = expanded,
+                    enter = slideInVertically(initialOffsetY = { it / 2 }) + fadeIn(),
+                    exit = slideOutVertically(targetOffsetY = { it / 2 }) + fadeOut()
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        // Import button
+                        FloatingActionButton(
+                            onClick = {
+                                expanded = false
+                                onImportClick()
+                            },
+                            shape = CircleShape,
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            modifier = Modifier.size(48.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = "Import audio",
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+                        // Record button — shared element to recording screen
+                        with(sharedTransitionScope) {
+                            FloatingActionButton(
+                                onClick = {
+                                    expanded = false
+                                    onRecordClick()
+                                },
+                                shape = CircleShape,
+                                containerColor = MaterialTheme.colorScheme.error,
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .sharedBounds(
+                                        rememberSharedContentState(key = "record-btn"),
+                                        animatedVisibilityScope = animatedVisibilityScope
+                                    )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Mic,
+                                    contentDescription = "Record meeting",
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                // Main + FAB
                 FloatingActionButton(
-                    onClick = onRecordClick,
+                    onClick = { expanded = !expanded },
                     shape = CircleShape,
-                    containerColor = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.sharedBounds(
-                        rememberSharedContentState(key = "record-btn"),
-                        animatedVisibilityScope = animatedVisibilityScope
-                    )
+                    containerColor = MaterialTheme.colorScheme.primary
                 ) {
                     Icon(
-                        imageVector = Icons.Default.Mic,
-                        contentDescription = "Record meeting",
+                        imageVector = if (expanded) Icons.Default.Close else Icons.Default.Add,
+                        contentDescription = if (expanded) "Close" else "New meeting",
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(28.dp)
                     )

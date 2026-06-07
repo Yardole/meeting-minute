@@ -48,6 +48,9 @@ fun AppNavigation(
                     },
                     onRecordClick = {
                         navController.navigate(Screen.Recording.route)
+                    },
+                    onImportClick = {
+                        // TODO: trigger audio file import
                     }
                 )
             }
