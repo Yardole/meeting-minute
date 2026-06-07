@@ -58,7 +58,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
@@ -94,23 +93,6 @@ fun HomeScreen(
         contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let { viewModel.importAudio(it, context) }
-    }
-
-    // Blur + scrim overlay when FAB is expanded
-    if (expanded) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S)
-                        Modifier.blur(16.dp) else Modifier
-                )
-                .background(Color.Black.copy(alpha = 0.25f))
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                ) { expanded = false }
-        )
     }
 
     Scaffold(
@@ -153,55 +135,91 @@ fun HomeScreen(
                         horizontalAlignment = Alignment.End,
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // Import button — no ripple
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.secondaryContainer)
-                                .clickable(
-                                    indication = null,
-                                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                                ) {
-                                    expanded = false
-                                    importLauncher.launch(arrayOf("audio/*"))
-                                },
-                            contentAlignment = Alignment.Center
+                        // Import button with label
+                        Row(
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.FileUpload,
-                                contentDescription = "Import audio",
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-
-                        // Record button — shared element + no ripple
-                        with(sharedTransitionScope) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(end = 12.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color.Black.copy(alpha = 0.35f))
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = "Import",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = Color.White
+                                )
+                            }
                             Box(
                                 modifier = Modifier
                                     .size(56.dp)
-                                    .sharedBounds(
-                                        rememberSharedContentState(key = "record-btn"),
-                                        animatedVisibilityScope = animatedVisibilityScope
-                                    )
                                     .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.error)
+                                    .background(MaterialTheme.colorScheme.secondaryContainer)
                                     .clickable(
                                         indication = null,
                                         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                                     ) {
                                         expanded = false
-                                        onRecordClick()
+                                        importLauncher.launch(arrayOf("audio/*"))
                                     },
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Mic,
-                                    contentDescription = "Record meeting",
-                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    imageVector = Icons.Default.FileUpload,
+                                    contentDescription = "Import audio",
+                                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                     modifier = Modifier.size(28.dp)
                                 )
+                            }
+                        }
+
+                        // Record button with label — shared element + no ripple
+                        Row(
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(end = 12.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color.Black.copy(alpha = 0.35f))
+                                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = "Record",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = Color.White
+                                )
+                            }
+                            with(sharedTransitionScope) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(56.dp)
+                                        .sharedBounds(
+                                            rememberSharedContentState(key = "record-btn"),
+                                            animatedVisibilityScope = animatedVisibilityScope
+                                        )
+                                        .clip(CircleShape)
+                                        .background(MaterialTheme.colorScheme.error)
+                                        .clickable(
+                                            indication = null,
+                                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                                        ) {
+                                            expanded = false
+                                            onRecordClick()
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Mic,
+                                        contentDescription = "Record meeting",
+                                        tint = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.size(28.dp)
+                                    )
+                                }
                             }
                         }
                     }
@@ -236,7 +254,8 @@ fun HomeScreen(
                     },
                     shape = CircleShape,
                     containerColor = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.scale(fabScale.value)
+                    modifier = Modifier
+                        .scale(fabScale.value)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Add,
@@ -250,11 +269,15 @@ fun HomeScreen(
             }
         }
     ) { padding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(MaterialTheme.colorScheme.background)
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(padding)
         ) {
             Box(
                 modifier = Modifier
@@ -303,8 +326,10 @@ fun HomeScreen(
                     modifier = Modifier.align(Alignment.TopCenter)
                 )
             }
-        }
-    }
+        } // end Column
+
+    } // end content Box
+} // end Scaffold content
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
