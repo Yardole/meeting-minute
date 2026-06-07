@@ -160,21 +160,35 @@ fun MeetingDetailScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "< Back",
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 16.sp
-                    ),
-                    modifier = Modifier.clickable(onClick = onBackClick)
-                )
-                Text(
-                    text = "Share",
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        color = MaterialTheme.colorScheme.primary,
-                        fontSize = 13.sp
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .clickable(onClick = onBackClick)
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = "← Back",
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            fontSize = 13.sp
+                        )
                     )
-                )
+                }
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .padding(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = "Share",
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            fontSize = 13.sp
+                        )
+                    )
+                }
             }
 
             // Editable title
@@ -228,6 +242,27 @@ fun MeetingDetailScreen(
                         }
                 )
             }
+
+            // Date + duration subtitle
+            meeting?.let { m ->
+                val formatter = java.time.format.DateTimeFormatter.ofPattern("MMM d, yyyy", java.util.Locale.getDefault())
+                val dateStr = java.time.Instant
+                    .ofEpochMilli(m.recordedAt.toEpochMilli())
+                    .atZone(java.time.ZoneId.systemDefault())
+                    .format(formatter)
+                val durationMin = m.durationMs / 60000
+                val durationStr = if (durationMin < 1) "${m.durationMs / 1000} sec" else "$durationMin min"
+                Text(
+                    text = "$dateStr · $durationStr",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp
+                    ),
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
 
             if (isLandscape) {
                 // Landscape: player on left, tabs + content on right
