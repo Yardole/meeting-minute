@@ -32,6 +32,9 @@ class HomeViewModel @Inject constructor(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing
 
+    private val _isFabExpanded = MutableStateFlow(false)
+    val isFabExpanded: StateFlow<Boolean> = _isFabExpanded
+
     init {
         triggerSync()
     }
@@ -80,6 +83,14 @@ class HomeViewModel @Inject constructor(
                 android.util.Log.e("HomeVM", "Import failed", e)
             }
         }
+    }
+
+    fun toggleFab() {
+        _isFabExpanded.value = !_isFabExpanded.value
+    }
+
+    fun collapseFab() {
+        _isFabExpanded.value = false
     }
 
     fun deleteMeeting(id: UUID) {

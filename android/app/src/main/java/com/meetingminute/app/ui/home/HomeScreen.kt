@@ -83,7 +83,7 @@ fun HomeScreen(
 ) {
     val meetings by viewModel.meetings.collectAsState()
 
-    var expanded by remember { mutableStateOf(false) }
+    val expanded by viewModel.isFabExpanded.collectAsState()
 
     // Audio file import picker
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -154,7 +154,7 @@ fun HomeScreen(
                                         indication = null,
                                         interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                                     ) {
-                                        expanded = false
+                                        viewModel.collapseFab()
                                         importLauncher.launch(arrayOf("audio/*"))
                                     },
                                 contentAlignment = Alignment.Center
@@ -206,7 +206,6 @@ fun HomeScreen(
                                             indication = null,
                                             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                                         ) {
-                                            expanded = false
                                             onRecordClick()
                                         },
                                     contentAlignment = Alignment.Center
@@ -238,7 +237,7 @@ fun HomeScreen(
 
                 FloatingActionButton(
                     onClick = {
-                        expanded = !expanded
+                        viewModel.toggleFab()
                         scope.launch {
                             fabScale.snapTo(0.88f)
                             fabScale.animateTo(
@@ -302,7 +301,9 @@ fun HomeScreen(
             ) {
                 LazyColumn(
                     state = listState,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
                     items(meetings, key = { it.id }) { meeting ->
@@ -400,7 +401,7 @@ private fun MeetingContent(
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.Top
     ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(
@@ -421,6 +422,7 @@ private fun MeetingContent(
 
         Box(
             modifier = Modifier
+                .padding(top = 2.dp)
                 .clip(RoundedCornerShape(10.dp))
                 .background(MaterialTheme.colorScheme.primary)
                 .padding(horizontal = 10.dp, vertical = 4.dp)
