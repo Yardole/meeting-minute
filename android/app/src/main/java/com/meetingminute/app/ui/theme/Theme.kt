@@ -23,6 +23,7 @@ private val LightColors = lightColorScheme(
     onSurfaceVariant = WarmMuted,
     outline = WarmLine,
     error = WarmError,
+    onError = WarmCard,
 )
 
 private val DarkColors = darkColorScheme(

@@ -1,7 +1,6 @@
 package com.meetingminute.app.ui.home
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -13,12 +12,14 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,10 +42,7 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -56,15 +54,19 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -96,6 +98,7 @@ fun HomeScreen(
 
     Scaffold(
         floatingActionButton = {
+            val fabHaptic = androidx.compose.ui.platform.LocalHapticFeedback.current
             Column(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -238,7 +241,17 @@ fun HomeScreen(
 
                 FloatingActionButton(
                     onClick = {
+                        val expanding = !expanded
                         viewModel.toggleFab()
+                        if (expanding) {
+                            scope.launch {
+                                delay(50)
+                                repeat(4) {
+                                    fabHaptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                                    delay(100)
+                                }
+                            }
+                        }
                         scope.launch {
                             fabScale.snapTo(0.88f)
                             fabScale.animateTo(
@@ -328,7 +341,6 @@ fun HomeScreen(
 } // end Scaffold content
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MeetingListItem(
     meeting: Meeting,
@@ -336,55 +348,92 @@ private fun MeetingListItem(
     onDelete: () -> Unit
 ) {
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    val thresholdPx = with(density) { 80.dp.toPx() }
 
-    val dismissState = rememberSwipeToDismissBoxState(
-        confirmValueChange = { value ->
-            if (value == SwipeToDismissBoxValue.EndToStart) {
-                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
-                onDelete()
-                true
-            } else {
-                false
-            }
-        }
-    )
+    var offsetX by remember { mutableStateOf(0f) }
+    val scope = rememberCoroutineScope()
+    var deleted by remember { mutableStateOf(false) }
+    var passedThreshold by remember { mutableStateOf(false) }
 
-    SwipeToDismissBox(
-        state = dismissState,
-        backgroundContent = {
-            val color by animateColorAsState(
-                when (dismissState.targetValue) {
-                    SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.error
-                    else -> Color.Transparent
-                },
-                label = "swipeColor"
+    Box(modifier = Modifier.fillMaxWidth()) {
+        // Red delete background — revealed as you swipe
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(MaterialTheme.colorScheme.error)
+                .padding(horizontal = 20.dp),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            Text(
+                text = "Delete",
+                color = MaterialTheme.colorScheme.onError,
+                fontWeight = FontWeight.Medium,
+                fontSize = 16.sp,
+                modifier = Modifier.alpha((-offsetX / thresholdPx).coerceIn(0f, 1f))
             )
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(color)
-                    .padding(horizontal = 20.dp),
-                contentAlignment = Alignment.CenterEnd
-            ) {
-                Text(
-                    text = "Delete",
-                    color = Color.White,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.sp
-                )
-            }
-        },
-        enableDismissFromStartToEnd = false,
-        enableDismissFromEndToStart = true
-    ) {
-        MeetingContent(meeting = meeting, onClick = onClick)
+        }
+
+        // Foreground content — swipeable
+        Box(
+            modifier = Modifier
+                .offset { IntOffset(offsetX.toInt().coerceAtMost(0), 0) }
+                .fillMaxWidth()
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures(
+                        onDragEnd = {
+                            passedThreshold = false
+                            if (-offsetX > thresholdPx) {
+                                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                                deleted = true
+                                scope.launch {
+                                    val anim = Animatable(offsetX)
+                                    anim.animateTo(-2f * thresholdPx, tween(200))
+                                    offsetX = anim.value
+                                    onDelete()
+                                }
+                            } else {
+                                // Spring back
+                                scope.launch {
+                                    val anim = Animatable(offsetX)
+                                    anim.animateTo(
+                                        0f,
+                                        animationSpec = spring(
+                                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                                            stiffness = Spring.StiffnessLow
+                                        )
+                                    )
+                                    offsetX = 0f
+                                }
+                            }
+                        },
+                        onHorizontalDrag = { _: androidx.compose.ui.input.pointer.PointerInputChange, dragAmount: Float ->
+                            if (!deleted) {
+                                val prevOffset = offsetX
+                                offsetX = (offsetX + dragAmount).coerceIn(-thresholdPx * 2f, 0f)
+                                // Haptic when crossing the threshold
+                                if (!passedThreshold && -offsetX > thresholdPx) {
+                                    passedThreshold = true
+                                    haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                                } else if (passedThreshold && -offsetX <= thresholdPx) {
+                                    passedThreshold = false
+                                }
+                            }
+                        }
+                    )
+                }
+                .background(MaterialTheme.colorScheme.background)
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 14.dp)
+        ) {
+            MeetingContentInner(meeting = meeting)
+        }
     }
 }
 
 @Composable
-private fun MeetingContent(
-    meeting: Meeting,
-    onClick: () -> Unit
+private fun MeetingContentInner(
+    meeting: Meeting
 ) {
     val formatter = DateTimeFormatter.ofPattern("MMM d", Locale.getDefault())
     val dateStr = java.time.Instant
@@ -396,11 +445,7 @@ private fun MeetingContent(
     val durationStr = if (durationMin < 1) "${meeting.durationMs / 1000} sec" else "$durationMin min"
 
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.background)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Top
     ) {

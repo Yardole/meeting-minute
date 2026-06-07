@@ -164,7 +164,10 @@ fun MeetingDetailScreen(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
                         .background(MaterialTheme.colorScheme.secondaryContainer)
-                        .clickable(onClick = onBackClick)
+                        .clickable {
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                            onBackClick()
+                        }
                         .padding(horizontal = 14.dp, vertical = 6.dp)
                 ) {
                     Text(
@@ -179,6 +182,9 @@ fun MeetingDetailScreen(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
                         .background(MaterialTheme.colorScheme.secondaryContainer)
+                        .clickable {
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                        }
                         .padding(horizontal = 14.dp, vertical = 6.dp)
                 ) {
                     Text(
