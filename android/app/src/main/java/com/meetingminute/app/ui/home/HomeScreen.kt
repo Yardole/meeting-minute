@@ -58,6 +58,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
@@ -93,6 +94,23 @@ fun HomeScreen(
         contract = androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let { viewModel.importAudio(it, context) }
+    }
+
+    // Blur + scrim overlay when FAB is expanded
+    if (expanded) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S)
+                        Modifier.blur(16.dp) else Modifier
+                )
+                .background(Color.Black.copy(alpha = 0.25f))
+                .clickable(
+                    indication = null,
+                    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                ) { expanded = false }
+        )
     }
 
     Scaffold(
