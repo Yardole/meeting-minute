@@ -17,6 +17,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import com.meetingminute.app.ui.components.EdgeScrollHaptics
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
@@ -44,7 +48,7 @@ import com.meetingminute.app.domain.model.Meeting
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, androidx.compose.animation.ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class, androidx.compose.animation.ExperimentalSharedTransitionApi::class)
 @Composable
 fun HomeScreen(
     animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
@@ -99,18 +103,36 @@ fun HomeScreen(
             val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
             EdgeScrollHaptics(listState, haptic)
 
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(0.dp)
+            val isRefreshing by viewModel.isRefreshing.collectAsState()
+            val pullRefreshState = rememberPullRefreshState(
+                refreshing = isRefreshing,
+                onRefresh = { viewModel.refresh() }
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pullRefresh(pullRefreshState)
             ) {
-                items(meetings, key = { it.id }) { meeting ->
-                    MeetingListItem(
-                        meeting = meeting,
-                        onClick = { onMeetingClick(meeting.id.toString()) },
-                        onDelete = { viewModel.deleteMeeting(meeting.id) }
-                    )
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(0.dp)
+                ) {
+                    items(meetings, key = { it.id }) { meeting ->
+                        MeetingListItem(
+                            meeting = meeting,
+                            onClick = { onMeetingClick(meeting.id.toString()) },
+                            onDelete = { viewModel.deleteMeeting(meeting.id) }
+                        )
+                    }
                 }
+
+                PullRefreshIndicator(
+                    refreshing = isRefreshing,
+                    state = pullRefreshState,
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
             }
         }
     }
