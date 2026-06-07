@@ -7,6 +7,8 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
@@ -93,17 +95,23 @@ fun HomeScreen(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Mini FABs — slide up when expanded
+                // Mini FABs — slide out from behind the main FAB
                 AnimatedVisibility(
                     visible = expanded,
                     enter = slideInVertically(
                         initialOffsetY = { it },
                         animationSpec = tween(250)
-                    ) + fadeIn(animationSpec = tween(250)),
+                    ) + scaleIn(
+                        initialScale = 0.2f,
+                        animationSpec = tween(250)
+                    ) + fadeIn(animationSpec = tween(150)),
                     exit = slideOutVertically(
                         targetOffsetY = { it },
                         animationSpec = tween(200)
-                    ) + fadeOut(animationSpec = tween(200))
+                    ) + scaleOut(
+                        targetScale = 0.2f,
+                        animationSpec = tween(200)
+                    ) + fadeOut(animationSpec = tween(150))
                 ) {
                     Column(
                         horizontalAlignment = Alignment.End,
