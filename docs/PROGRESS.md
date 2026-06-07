@@ -83,15 +83,51 @@
 - [ ] `feat/morph-progress-ring`: circle morphs into progress bar (stashed, needs work)
 - [ ] FAB speed-dial animation: bounce needs more polish, especially on rapid toggle
 
-### 2026-06-07 (continued)
+### 2026-06-07 (continued — session 2)
 
 - [x] Speed-dial FAB: "+" expands to reveal Record (mic) + Import (file) mini-FABs
 - [x] Mini-FABs emerge from behind main FAB with scale+slide spring animation
 - [x] "+" rotates 45° to "×" with spring bounce
 - [x] Audio file import via system file picker (audio/*)
 - [x] Main FAB tap bounce with Animatable snapTo + animateTo
-- [x] Pull-to-refresh on home screen triggers sync
-- [x] Editable meeting title with auto-focus and multiline support
+- [x] Pull-to-refresh on home screen triggers sync (with 800ms min spinner)
+- [x] Editable meeting title with auto-focus (FocusRequester) and multiline support (maxLines=3)
+- [x] Background blur + scrim when speed-dial FAB is open (16dp blur, API 31+)
+- [x] Import FAB icon changed to FileUpload
+
+## Status Summary (end of 2026-06-07)
+
+**Branch:** `main` (clean)
+**Last commit:** `0b6a32d` — "feat: blur background when speed-dial FAB is expanded"
+
+**What's solid:**
+- Recording → upload → transcribe → summarize pipeline
+- Chat with Oliva persona, floating input, scrollable bubbles
+- Sync engine (bidirectional, last-write-wins)
+- Warm editorial design system (Fraunces + DM Sans, olive on paper)
+- Edge-to-edge with scrim gradients
+- Haptic feedback throughout
+- Player controls with seek bar, speed control
+- Speaker rename with auto-summary update
+- Slide-left/right page transitions
+- Animated tab indicator
+- Shared element FAB → recording button transition
+- Pull-to-refresh with sync
+- Audio file import
+- Speed-dial FAB with blur backdrop
+- Editable meeting title
+
+**Still open (from milestones):**
+- Share sheet (Markdown/PDF/Word/Plain text)
+- Push notifications (processing complete)
+- Search meetings
+- Empty states (prettier placeholders)
+- Offline recording + processing queue
+- Delete meeting cascade sync
+- V2 iOS port
+- YouTube video import
+- Google/Apple Sign-In
+- Real-time transcription
 
 ### Commits
 
