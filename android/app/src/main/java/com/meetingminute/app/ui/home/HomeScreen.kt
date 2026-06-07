@@ -3,6 +3,7 @@ package com.meetingminute.app.ui.home
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -100,17 +101,29 @@ fun HomeScreen(
                     visible = expanded,
                     enter = slideInVertically(
                         initialOffsetY = { it },
-                        animationSpec = tween(250)
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        )
                     ) + scaleIn(
                         initialScale = 0.2f,
-                        animationSpec = tween(250)
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        )
                     ) + fadeIn(animationSpec = tween(150)),
                     exit = slideOutVertically(
                         targetOffsetY = { it },
-                        animationSpec = tween(200)
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        )
                     ) + scaleOut(
                         targetScale = 0.2f,
-                        animationSpec = tween(200)
+                        animationSpec = spring(
+                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            stiffness = Spring.StiffnessMedium
+                        )
                     ) + fadeOut(animationSpec = tween(150))
                 ) {
                     Column(
@@ -174,7 +187,10 @@ fun HomeScreen(
                 // Main + FAB — morphs + ↔ × via rotation
                 val fabRotation by animateFloatAsState(
                     targetValue = if (expanded) 45f else 0f,
-                    animationSpec = spring(dampingRatio = 0.6f, stiffness = 400f),
+                    animationSpec = spring(
+                        dampingRatio = Spring.DampingRatioMediumBouncy,
+                        stiffness = Spring.StiffnessMedium
+                    ),
                     label = "fabRotate"
                 )
 
