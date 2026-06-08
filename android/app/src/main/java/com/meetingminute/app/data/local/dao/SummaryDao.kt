@@ -6,8 +6,14 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
 import com.meetingminute.app.data.local.entity.SummaryEntity
+import androidx.room.ColumnInfo
 import kotlinx.coroutines.flow.Flow
 import java.util.UUID
+
+data class SummaryTextRow(
+    @ColumnInfo(name = "meetingId") val meetingId: UUID,
+    val content: String
+)
 
 @Dao
 interface SummaryDao {
@@ -31,4 +37,10 @@ interface SummaryDao {
 
     @Query("DELETE FROM summaries")
     suspend fun deleteAll()
+
+    @Query("UPDATE summaries SET deletedAt = :deletedAt, updatedAt = :updatedAt WHERE meetingId = :meetingId AND deletedAt IS NULL")
+    suspend fun softDeleteByMeetingId(meetingId: UUID, deletedAt: Long, updatedAt: Long)
+
+    @Query("SELECT meetingId, content FROM summaries WHERE deletedAt IS NULL")
+    fun observeAllForSearch(): Flow<List<SummaryTextRow>>
 }

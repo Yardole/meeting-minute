@@ -10,6 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -28,6 +29,35 @@ class HomeViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = emptyList()
         )
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery
+
+    private val allTranscriptTexts: StateFlow<Map<UUID, String>> =
+        meetingRepository.observeAllTranscriptTexts()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    private val allSummaryTexts: StateFlow<Map<UUID, String>> =
+        meetingRepository.observeAllSummaryTexts()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
+
+    val filteredMeetings: StateFlow<List<Meeting>> = combine(
+        meetings,
+        _searchQuery,
+        allTranscriptTexts,
+        allSummaryTexts
+    ) { allMeetings, query, transcripts, summaries ->
+        if (query.isBlank()) allMeetings
+        else allMeetings.filter { m ->
+            m.title.contains(query, ignoreCase = true) ||
+            transcripts[m.id]?.contains(query, ignoreCase = true) == true ||
+            summaries[m.id]?.contains(query, ignoreCase = true) == true
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing
@@ -91,6 +121,14 @@ class HomeViewModel @Inject constructor(
 
     fun collapseFab() {
         _isFabExpanded.value = false
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun clearSearch() {
+        _searchQuery.value = ""
     }
 
     fun deleteMeeting(id: UUID) {

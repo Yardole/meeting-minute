@@ -22,42 +22,44 @@
 - [x] `transcribe` Edge Function wired to Assembly AI (diarization + speaker detection)
 - [x] Transcript tab UI (scrollable segments, speaker labels, timestamps)
 - [x] Tap timestamp to seek player
-- [ ] Speaker rename UI
+- [x] Speaker rename UI
 
-## M3 — Summary
+## M3 — Summary [x]
 
-- [ ] `summarize` Edge Function wired to DeepSeek
-- [ ] Summary tab UI (rendered summary + key points)
+- [x] `summarize` Edge Function wired to DeepSeek
+- [x] Summary tab UI (rendered summary + key points)
+- [x] AI-generated meeting titles
 - [ ] Share sheet: Markdown, PDF, Word, Plain text
 
-## M4 — Chat
+## M4 — Chat [x]
 
-- [ ] `chat` Edge Function wired to DeepSeek
-- [ ] Chat tab UI (message list, user input)
-- [ ] Chat scoped to current meeting transcript only
+- [x] `chat` Edge Function wired to DeepSeek
+- [x] Chat tab UI (message list, user input)
+- [x] Chat scoped to current meeting transcript only
 
-## M5 — Sync
+## M5 — Sync [x]
 
-- [ ] Local-first sync engine (last write wins, `updated_at` comparison)
-- [ ] Bidirectional sync for all tables: `meetings`, `speakers`, `transcript_segments`, `summaries`, `chat_messages`, `profiles`
-- [ ] Soft delete propagation
-- [ ] Conflict resolution tie-breaker
-- [ ] Sync worker with retry backoff
+- [x] Local-first sync engine (last write wins, `updated_at` comparison)
+- [x] Bidirectional sync for all tables: `meetings`, `speakers`, `transcript_segments`, `summaries`, `chat_messages`, `profiles`
+- [x] Soft delete propagation
+- [x] Conflict resolution tie-breaker
+- [x] Sync worker with retry backoff
 
 ## V1 — MVP Complete
 
 - [ ] Offline recording + online processing queue
 - [ ] Error states, retries, loading states
-- [ ] Audio file import (MP3, WAV, M4A)
-- [ ] Delete meeting + cascade soft delete sync
+- [x] Audio file import (MP3, WAV, M4A)
+- [x] Delete meeting + cascade soft delete sync (child entities)
+- [x] Empty states
 
 ## V1.1 — Polish
 
 - [ ] Push notifications (processing complete)
-- [ ] Search meetings
-- [ ] Edit meeting title
-- [ ] Pull-to-refresh
-- [ ] Empty states
+- [x] Search meetings
+- [x] Edit meeting title
+- [x] Pull-to-refresh
+- [x] Share sheet: Markdown, PDF, Word, Plain text (moved from M3)
 
 ## V2 — iOS
 

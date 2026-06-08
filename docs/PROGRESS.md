@@ -1,5 +1,38 @@
 # Progress Log
 
+## 2026-06-08
+
+### Done since 2026-06-07 session 2
+
+- [x] Custom swipe-to-delete with threshold haptic (50% threshold, success haptic on commit, edge bump on release)
+- [x] Meeting detail polish — date subtitle under title, chip-style action buttons (rename, delete)
+- [x] Single-line meeting titles with ellipsis on home screen
+- [x] FAB expanded state persists across navigation (leaves expanded, returns to same state)
+- [x] FAB labels with staggered animation ("Record meeting", "Import audio")
+- [x] Meeting list polish
+
+### Now
+
+- [x] Clean up stale TODO in AppNavigation (import already handled in HomeScreen)
+- [x] Empty states: home screen, transcript tab, chat tab, minutes tab
+- [x] Delete cascade: soft-delete child entities when meeting is deleted
+- [x] Share sheet: bottom sheet with content toggles (Summary, Transcript), format selector (Plain text, Markdown, PDF, Word), preview with nested scroll isolation, drag handle, FileProvider for PDF/DOCX
+- [x] Share sheet polish: taller preview (220dp), nested scroll fix (preview doesn't propagate to sheet drag), drag handle
+- [x] Search bar: real-time keyword search on meeting titles, clear button, focus-aware styling
+- [x] Design polish: "Summary" header in Fraunces matching title color
+
+### Commits (2026-06-07 session 2 → 2026-06-08)
+
+```
+8d33bbe feat: custom swipe-to-delete with threshold haptic, haptic polish
+620a81c feat: meeting detail polish — date subtitle, chip buttons
+d55cbda fix: single-line meeting titles with ellipsis on home screen
+7b601d9 fix: persist FAB expanded state across navigation, polish meeting list
+05f91f1 feat: FAB labels with staggered animation and polish
+```
+
+---
+
 ## 2026-06-07
 
 ### Done
@@ -95,10 +128,11 @@
 - [x] Background blur + scrim when speed-dial FAB is open (16dp blur, API 31+)
 - [x] Import FAB icon changed to FileUpload
 
-## Status Summary (end of 2026-06-07)
+## Status Summary (start of 2026-06-08)
 
-**Branch:** `main` (clean)
-**Last commit:** `0b6a32d` — "feat: blur background when speed-dial FAB is expanded"
+**Branch:** `main` (clean, uncommitted changes pending)
+**Last commit:** `8d33bbe` — "feat: custom swipe-to-delete with threshold haptic, haptic polish"
+**Pending changes:** Stale TODO cleanup, empty states, delete cascade, share sheet, Summary header Fraunces styling
 
 **What's solid:**
 - Recording → upload → transcribe → summarize pipeline
@@ -118,12 +152,11 @@
 - Editable meeting title
 
 **Still open (from milestones):**
-- Share sheet (Markdown/PDF/Word/Plain text)
+- Push notifications (processing complete)
+- Offline recording + processing queue
 - Push notifications (processing complete)
 - Search meetings
-- Empty states (prettier placeholders)
 - Offline recording + processing queue
-- Delete meeting cascade sync
 - V2 iOS port
 - YouTube video import
 - Google/Apple Sign-In

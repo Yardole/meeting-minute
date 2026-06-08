@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import com.meetingminute.app.ui.components.EdgeScrollHaptics
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
@@ -38,6 +39,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -58,6 +60,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
@@ -81,10 +84,10 @@ fun HomeScreen(
     sharedTransitionScope: androidx.compose.animation.SharedTransitionScope,
     onMeetingClick: (String) -> Unit,
     onRecordClick: () -> Unit,
-    onImportClick: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val meetings by viewModel.meetings.collectAsState()
+    val meetings by viewModel.filteredMeetings.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
 
     val expanded by viewModel.isFabExpanded.collectAsState()
 
@@ -298,6 +301,74 @@ fun HomeScreen(
                     .padding(horizontal = 24.dp, vertical = 24.dp)
             )
 
+            // Search bar
+            var isSearchFocused by remember { mutableStateOf(false) }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 4.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                            alpha = if (isSearchFocused) 0.7f else 0.4f
+                        ),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    BasicTextField(
+                        value = searchQuery,
+                        onValueChange = { viewModel.onSearchQueryChanged(it) },
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 10.dp)
+                            .onFocusChanged { isSearchFocused = it.isFocused },
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
+                        singleLine = true,
+                        decorationBox = { innerTextField ->
+                            Box {
+                                if (searchQuery.isEmpty()) {
+                                    Text(
+                                        text = "Search meetings",
+                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                        )
+                                    )
+                                }
+                                innerTextField()
+                            }
+                        }
+                    )
+                    if (searchQuery.isNotEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .clickable { viewModel.clearSearch() }
+                                .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Clear search",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
             val listState = rememberLazyListState()
             val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
             EdgeScrollHaptics(listState, haptic)
@@ -313,19 +384,49 @@ fun HomeScreen(
                     .fillMaxSize()
                     .pullRefresh(pullRefreshState)
             ) {
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(0.dp)
-                ) {
-                    items(meetings, key = { it.id }) { meeting ->
-                        MeetingListItem(
-                            meeting = meeting,
-                            onClick = { onMeetingClick(meeting.id.toString()) },
-                            onDelete = { viewModel.deleteMeeting(meeting.id) }
-                        )
+                if (meetings.isEmpty()) {
+                    // Empty state — warm editorial placeholder
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "No meetings yet",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontFamily = com.meetingminute.app.ui.theme.Fraunces,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                                )
+                            )
+                            Text(
+                                text = "Tap + to record or import audio",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(0.dp)
+                    ) {
+                        items(meetings, key = { it.id }) { meeting ->
+                            MeetingListItem(
+                                meeting = meeting,
+                                onClick = { onMeetingClick(meeting.id.toString()) },
+                                onDelete = { viewModel.deleteMeeting(meeting.id) }
+                            )
+                        }
                     }
                 }
 

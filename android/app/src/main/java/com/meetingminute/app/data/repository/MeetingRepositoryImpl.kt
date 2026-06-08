@@ -154,7 +154,17 @@ class MeetingRepositoryImpl @Inject constructor(
 
     override suspend fun deleteMeeting(id: UUID) {
         val entity = database.meetingDao().getById(id) ?: return
-        database.meetingDao().update(entity.copy(deletedAt = Instant.now(), updatedAt = Instant.now()))
+        val now = Instant.now()
+        val nowEpoch = now.toEpochMilli()
+
+        // Soft-delete the meeting
+        database.meetingDao().update(entity.copy(deletedAt = now, updatedAt = now))
+
+        // Cascade soft-delete to child entities so sync propagates correctly
+        database.speakerDao().softDeleteByMeetingId(id, nowEpoch, nowEpoch)
+        database.transcriptSegmentDao().softDeleteByMeetingId(id, nowEpoch, nowEpoch)
+        database.summaryDao().softDeleteByMeetingId(id, nowEpoch, nowEpoch)
+        database.chatMessageDao().softDeleteByMeetingId(id, nowEpoch, nowEpoch)
     }
 
     override suspend fun uploadAudio(meetingId: UUID): Result<String> {
@@ -436,5 +446,18 @@ class MeetingRepositoryImpl @Inject constructor(
             name = name,
             displayOrder = displayOrder
         )
+    }
+
+    override fun observeAllTranscriptTexts(): Flow<Map<UUID, String>> {
+        return database.transcriptSegmentDao().observeAllForSearch().map { rows ->
+            rows.groupBy({ it.meetingId }, { it.text })
+                .mapValues { (_, texts) -> texts.joinToString(" ") }
+        }
+    }
+
+    override fun observeAllSummaryTexts(): Flow<Map<UUID, String>> {
+        return database.summaryDao().observeAllForSearch().map { rows ->
+            rows.associate { it.meetingId to it.content }
+        }
     }
 }

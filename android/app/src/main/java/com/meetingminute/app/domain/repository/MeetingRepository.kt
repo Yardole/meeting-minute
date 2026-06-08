@@ -24,4 +24,6 @@ interface MeetingRepository {
     suspend fun sendChatMessage(meetingId: UUID, transcriptText: String, message: String): Result<String>
     suspend fun updateSpeaker(speaker: Speaker)
     suspend fun getTranscriptText(meetingId: UUID): String
+    fun observeAllTranscriptTexts(): Flow<Map<UUID, String>>
+    fun observeAllSummaryTexts(): Flow<Map<UUID, String>>
 }

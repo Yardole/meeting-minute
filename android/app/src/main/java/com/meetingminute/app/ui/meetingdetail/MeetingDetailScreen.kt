@@ -74,6 +74,7 @@ import com.meetingminute.app.domain.model.Speaker
 import com.meetingminute.app.domain.model.TranscriptSegment
 import com.meetingminute.app.ui.components.BottomPlayer
 import com.meetingminute.app.ui.components.EdgeScrollHaptics
+import com.meetingminute.app.ui.components.ShareSheet
 import java.util.UUID
 
 @Composable
@@ -100,6 +101,9 @@ fun MeetingDetailScreen(
     // Speaker rename dialog state
     var renameSpeakerId by remember { mutableStateOf<UUID?>(null) }
     var renameText by remember { mutableStateOf("") }
+
+    // Share sheet state
+    var showShareSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(meeting?.localAudioPath) {
         meeting?.localAudioPath?.let { path ->
@@ -184,6 +188,7 @@ fun MeetingDetailScreen(
                         .background(MaterialTheme.colorScheme.secondaryContainer)
                         .clickable {
                             haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                            showShareSheet = true
                         }
                         .padding(horizontal = 14.dp, vertical = 6.dp)
                 ) {
@@ -371,6 +376,15 @@ fun MeetingDetailScreen(
             }
         }
     }
+
+    // Share bottom sheet
+    ShareSheet(
+        show = showShareSheet,
+        onDismiss = { showShareSheet = false },
+        meeting = meeting,
+        summary = summary,
+        segments = segments
+    )
 }
 
 @Composable
@@ -389,6 +403,7 @@ private fun MinutesTab(meeting: Meeting?, summary: String?) {
                 Text(
                     text = "Summary",
                     style = MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = com.meetingminute.app.ui.theme.Fraunces,
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp
                     ),
@@ -408,20 +423,36 @@ private fun MinutesTab(meeting: Meeting?, summary: String?) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
         ) {
             val status = meeting?.status?.name ?: ""
             Text(
                 text = when {
-                    status.startsWith("SUMMARIZING") -> "Generating summary..."
-                    status == "TRANSCRIBED" || status.startsWith("TRANSCRIBI") -> "Transcript ready. Summary pending..."
-                    status == "ERROR" -> "An error occurred during processing."
-                    else -> "Record and upload audio to get started."
+                    status.startsWith("SUMMARIZING") -> "Generating summary"
+                    status == "TRANSCRIBED" || status.startsWith("TRANSCRIBI") -> "Summary pending"
+                    status == "ERROR" -> "An error occurred"
+                    else -> "No summary yet"
+                },
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontFamily = com.meetingminute.app.ui.theme.Fraunces,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                ),
+                modifier = Modifier.padding(top = 32.dp)
+            )
+            Text(
+                text = when {
+                    status.startsWith("SUMMARIZING") -> "Oliva is generating a summary of this meeting."
+                    status == "TRANSCRIBED" || status.startsWith("TRANSCRIBI") -> "Transcript is ready. Summary will be generated next."
+                    status == "ERROR" -> "An error occurred during processing. Try uploading again."
+                    else -> "Record and upload audio to generate a summary."
                 },
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
-                modifier = Modifier.padding(top = 24.dp)
+                modifier = Modifier.padding(top = 8.dp)
             )
         }
     }
@@ -438,14 +469,25 @@ private fun TranscriptTab(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp)
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
         ) {
             Text(
-                text = "Transcript will appear here once processed.",
+                text = "No transcript yet",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontFamily = com.meetingminute.app.ui.theme.Fraunces,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                ),
+                modifier = Modifier.padding(top = 32.dp)
+            )
+            Text(
+                text = "Transcript will appear here once the audio has been processed.",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 ),
-                modifier = Modifier.padding(top = 24.dp)
+                modifier = Modifier.padding(top = 8.dp)
             )
         }
         return
@@ -529,12 +571,25 @@ private fun ChatTab(
                 modifier = Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "Ask questions about this meeting.",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = "Ask Oliva",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = com.meetingminute.app.ui.theme.Fraunces,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
+                        )
                     )
-                )
+                    Text(
+                        text = "Ask questions about this meeting.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                }
             }
         } else {
             val listState = rememberLazyListState()

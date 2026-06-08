@@ -31,4 +31,7 @@ interface SpeakerDao {
 
     @Query("DELETE FROM speakers")
     suspend fun deleteAll()
+
+    @Query("UPDATE speakers SET deletedAt = :deletedAt, updatedAt = :updatedAt WHERE meetingId = :meetingId AND deletedAt IS NULL")
+    suspend fun softDeleteByMeetingId(meetingId: UUID, deletedAt: Long, updatedAt: Long)
 }
