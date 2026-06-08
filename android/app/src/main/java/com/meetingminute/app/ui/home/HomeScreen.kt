@@ -1,6 +1,7 @@
 package com.meetingminute.app.ui.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
@@ -13,6 +14,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,6 +63,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.IntOffset
@@ -289,9 +292,13 @@ fun HomeScreen(
                 .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
+        val focusManager = LocalFocusManager.current
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectTapGestures { focusManager.clearFocus() }
+                }
         ) {
             Text(
                 text = "Oliva",
@@ -303,13 +310,20 @@ fun HomeScreen(
 
             // Search bar
             var isSearchFocused by remember { mutableStateOf(false) }
+            val searchBarBg by animateColorAsState(
+                targetValue = if (isSearchFocused)
+                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.8f)
+                else
+                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+                animationSpec = tween(400)
+            )
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .padding(bottom = 4.dp)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f))
+                    .background(searchBarBg)
                     .padding(horizontal = 14.dp, vertical = 10.dp)
             ) {
                 Row(
@@ -341,7 +355,9 @@ fun HomeScreen(
                                     Text(
                                         text = "Search meetings",
                                         style = MaterialTheme.typography.bodyMedium.copy(
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                                alpha = if (isSearchFocused) 0.6f else 0.4f
+                                            )
                                         )
                                     )
                                 }
@@ -385,19 +401,21 @@ fun HomeScreen(
                     .pullRefresh(pullRefreshState)
             ) {
                 if (meetings.isEmpty()) {
-                    // Empty state — warm editorial placeholder
+                    // Empty state — different text for no meetings vs no search results
+                    val isSearching = searchQuery.isNotEmpty()
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 32.dp),
-                        contentAlignment = Alignment.Center
+                            .padding(horizontal = 32.dp)
+                            .padding(top = 80.dp),
+                        contentAlignment = Alignment.TopCenter
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Text(
-                                text = "No meetings yet",
+                                text = if (isSearching) "No results" else "No meetings yet",
                                 style = MaterialTheme.typography.titleLarge.copy(
                                     fontFamily = com.meetingminute.app.ui.theme.Fraunces,
                                     fontWeight = FontWeight.SemiBold,
@@ -405,7 +423,10 @@ fun HomeScreen(
                                 )
                             )
                             Text(
-                                text = "Tap + to record or import audio",
+                                text = if (isSearching)
+                                    "No meetings match \"$searchQuery\""
+                                else
+                                    "Tap + to record or import audio",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
