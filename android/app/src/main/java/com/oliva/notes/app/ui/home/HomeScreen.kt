@@ -1,6 +1,7 @@
 package com.oliva.notes.app.ui.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.Animatable
@@ -455,7 +456,9 @@ fun HomeScreen(
                             MeetingListItem(
                                 meeting = meeting,
                                 onClick = { onMeetingClick(meeting.id.toString()) },
-                                onDelete = { viewModel.deleteMeeting(meeting.id) }
+                                onDelete = { viewModel.deleteMeeting(meeting.id) },
+                                sharedTransitionScope = sharedTransitionScope,
+                                animatedVisibilityScope = animatedVisibilityScope
                             )
                         }
                     }
@@ -473,11 +476,14 @@ fun HomeScreen(
 } // end Scaffold content
 }
 
+@OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
 @Composable
 private fun MeetingListItem(
     meeting: Meeting,
     onClick: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope,
+    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope
 ) {
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val density = androidx.compose.ui.platform.LocalDensity.current
@@ -556,15 +562,22 @@ private fun MeetingListItem(
                 }
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(MaterialTheme.colorScheme.surface)
-                    .clickable(onClick = onClick)
-                    .padding(horizontal = 16.dp, vertical = 14.dp)
-            ) {
-                MeetingContentInner(meeting = meeting)
+            with(sharedTransitionScope) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .sharedBounds(
+                            rememberSharedContentState(key = "meeting-${meeting.id}"),
+                            animatedVisibilityScope = animatedVisibilityScope,
+                            resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
+                        )
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(MaterialTheme.colorScheme.surface)
+                        .clickable(onClick = onClick)
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                ) {
+                    MeetingContentInner(meeting = meeting)
+                }
             }
         }
     }

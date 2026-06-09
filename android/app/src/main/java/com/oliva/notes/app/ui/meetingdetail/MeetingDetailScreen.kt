@@ -1,5 +1,8 @@
 package com.oliva.notes.app.ui.meetingdetail
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -78,9 +81,12 @@ import com.oliva.notes.app.ui.components.ShareSheet
 import java.util.UUID
 
 @Composable
+@OptIn(ExperimentalSharedTransitionApi::class)
 fun MeetingDetailScreen(
     meetingId: String,
     onBackClick: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     viewModel: MeetingDetailViewModel = hiltViewModel()
 ) {
     val meeting by viewModel.meeting.collectAsState()
@@ -144,10 +150,16 @@ fun MeetingDetailScreen(
     }
 
     Scaffold { padding ->
+        with(sharedTransitionScope) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
+                .sharedBounds(
+                    rememberSharedContentState(key = "meeting-$meetingId"),
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
+                )
                 .padding(padding)
         ) {
             val isLandscape =
@@ -378,6 +390,7 @@ fun MeetingDetailScreen(
                 }
             }
         }
+        } // end with(sharedTransitionScope)
     }
 
     // Share bottom sheet
