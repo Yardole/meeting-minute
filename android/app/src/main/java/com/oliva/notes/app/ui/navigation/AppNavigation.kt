@@ -5,8 +5,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,7 +38,9 @@ fun AppNavigation(
             navController = navController,
             startDestination = Screen.Home.route
         ) {
-            composable(Screen.Home.route) {
+            composable(
+                Screen.Home.route
+            ) {
                 HomeScreen(
                     animatedVisibilityScope = this@composable,
                     sharedTransitionScope = sharedTransitionScope,
@@ -70,24 +71,17 @@ fun AppNavigation(
                     navArgument("meetingId") { type = NavType.StringType }
                 ),
                 enterTransition = {
-                    slideInHorizontally(
-                        initialOffsetX = { it },
-                        animationSpec = tween(450, easing = FastOutSlowInEasing)
-                    ) + fadeIn(animationSpec = tween(450, easing = FastOutSlowInEasing))
+                    scaleIn(animationSpec = tween(400, easing = FastOutSlowInEasing)) +
+                        fadeIn(animationSpec = tween(400, easing = FastOutSlowInEasing))
                 },
                 exitTransition = {
-                    slideOutHorizontally(
-                        targetOffsetX = { it },
-                        animationSpec = tween(400, easing = FastOutSlowInEasing)
-                    ) + fadeOut(animationSpec = tween(400, easing = FastOutSlowInEasing))
+                    fadeOut(animationSpec = tween(300, easing = FastOutSlowInEasing))
                 }
             ) { backStackEntry ->
                 val meetingId = backStackEntry.arguments?.getString("meetingId") ?: ""
                 MeetingDetailScreen(
                     meetingId = meetingId,
-                    onBackClick = { navController.popBackStack() },
-                    sharedTransitionScope = sharedTransitionScope,
-                    animatedVisibilityScope = this@composable
+                    onBackClick = { navController.popBackStack() }
                 )
             }
         }
