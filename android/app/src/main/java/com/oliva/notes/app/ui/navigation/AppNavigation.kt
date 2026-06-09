@@ -85,7 +85,9 @@ fun AppNavigation(
                 val meetingId = backStackEntry.arguments?.getString("meetingId") ?: ""
                 MeetingDetailScreen(
                     meetingId = meetingId,
-                    onBackClick = { navController.popBackStack() }
+                    onBackClick = { navController.popBackStack() },
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = this@composable
                 )
             }
         }
