@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.0'
+import { sendPush } from '../_shared/fcm.ts'
 
 const DEEPSEEK_URL = 'https://api.deepseek.com/v1/chat/completions'
 
@@ -100,6 +101,16 @@ You must respond with a JSON object in this exact format:
     }
 
     await supabase.from('meetings').update({ status: 'summarized', title }).eq('id', meetingId)
+
+    // Send push notification
+    const { data: meeting } = await supabase.from('meetings').select('user_id').eq('id', meetingId).single()
+    if (meeting?.user_id) {
+      sendPush(supabase, meeting.user_id, {
+        title: 'Meeting ready',
+        body: `"${title}" is ready to view.`,
+        meetingId,
+      })
+    }
 
     return new Response(
       JSON.stringify({

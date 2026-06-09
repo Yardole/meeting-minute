@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1001501876693",
+    "project_id": "oliva-meeting-minutes",
+    "storage_bucket": "oliva-meeting-minutes.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1001501876693:android:80e4fcd2287a0f3bec1d5c",
+        "android_client_info": {
+          "package_name": "com.oliva.notes.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBu6xEaNF0n_-clwTmkTv0iBe5YzemiPfQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

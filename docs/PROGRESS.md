@@ -1,34 +1,31 @@
 # Progress Log
 
-## 2026-06-08
+## 2026-06-09
 
-### Done since 2026-06-07 session 2
+### Done since 2026-06-08
 
-- [x] Custom swipe-to-delete with threshold haptic (50% threshold, success haptic on commit, edge bump on release)
-- [x] Meeting detail polish — date subtitle under title, chip-style action buttons (rename, delete)
-- [x] Single-line meeting titles with ellipsis on home screen
-- [x] FAB expanded state persists across navigation (leaves expanded, returns to same state)
-- [x] FAB labels with staggered animation ("Record meeting", "Import audio")
-- [x] Meeting list polish
+- [x] Search expanded: now searches across meeting titles, transcript text, and summary content
+- [x] Search bar polish: animated focus (background + border fade 400ms, placeholder darkens), tap-outside-to-dismiss, "No results" vs "No meetings" empty state, higher empty text position
+- [x] Search bar outline: subtle animated border (25% → 70% on focus)
+- [x] Search bar thickness: taller vertical padding + larger icon
+- [x] Error handling + retry: pipeline failures set ERROR status (including upload), retryProcessing() resumes from current stage, recording screen shows ⚠ + red progress + Retry/View buttons, Minutes tab has Retry button on error, chat errors show "Failed to send" with tap-to-retry
+- [x] Package rename: com.meetingminute.app → com.oliva.notes.app
+- [x] Kotlin/Hilt upgrade to support Firebase BOM (Kotlin 2.0.21 + Hilt 2.50 + version force for stdlib)
+- [x] Push notifications: FCM v1 API via service account OAuth2, token stored in local profile, sync propagates to Supabase, transcribe + summarize Edge Functions send push on completion, notification channel + foreground handling on Android
+- [x] Supabase: fcm_token migration, FCM service account secret, Edge Functions redeployed with --no-verify-jwt, profiles FK dropped for placeholder user
+- [x] Uninstalled old package names from device (com.meetingminute.app, com.olive.notes.app)
 
-### Now
+### Next
 
-- [x] Clean up stale TODO in AppNavigation (import already handled in HomeScreen)
-- [x] Empty states: home screen, transcript tab, chat tab, minutes tab
-- [x] Delete cascade: soft-delete child entities when meeting is deleted
-- [x] Share sheet: bottom sheet with content toggles (Summary, Transcript), format selector (Plain text, Markdown, PDF, Word), preview with nested scroll isolation, drag handle, FileProvider for PDF/DOCX
-- [x] Share sheet polish: taller preview (220dp), nested scroll fix (preview doesn't propagate to sheet drag), drag handle
-- [x] Search bar: real-time keyword search on meeting titles, clear button, focus-aware styling
-- [x] Design polish: "Summary" header in Fraunces matching title color
+- [ ] Test push notifications end-to-end: sync profile → record meeting → verify notification
+- [ ] Offline recording + processing queue (last V1 feature)
 
-### Commits (2026-06-07 session 2 → 2026-06-08)
+### Commits (2026-06-08 → 2026-06-09)
 
 ```
-8d33bbe feat: custom swipe-to-delete with threshold haptic, haptic polish
-620a81c feat: meeting detail polish — date subtitle, chip buttons
-d55cbda fix: single-line meeting titles with ellipsis on home screen
-7b601d9 fix: persist FAB expanded state across navigation, polish meeting list
-05f91f1 feat: FAB labels with staggered animation and polish
+f213d62 feat: share sheet, search, empty states, delete cascade, docs polish
+6bd02a7 feat: search bar polish — focus animation, tap-to-dismiss, no-results state
+(not yet committed: error handling, FCM push notifications, package rename)
 ```
 
 ---
@@ -130,9 +127,8 @@ d55cbda fix: single-line meeting titles with ellipsis on home screen
 
 ## Status Summary (start of 2026-06-08)
 
-**Branch:** `main` (clean, uncommitted changes pending)
-**Last commit:** `8d33bbe` — "feat: custom swipe-to-delete with threshold haptic, haptic polish"
-**Pending changes:** Stale TODO cleanup, empty states, delete cascade, share sheet, Summary header Fraunces styling
+**Branch:** `main` (uncommitted changes: error handling, FCM push, package rename, search polish)
+**Last commit:** `6bd02a7` — "feat: search bar polish — focus animation, tap-to-dismiss, no-results state"
 
 **What's solid:**
 - Recording → upload → transcribe → summarize pipeline

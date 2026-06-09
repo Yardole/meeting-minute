@@ -48,14 +48,14 @@
 ## V1 — MVP Complete
 
 - [ ] Offline recording + online processing queue
-- [ ] Error states, retries, loading states
+- [x] Error states, retries, loading states
 - [x] Audio file import (MP3, WAV, M4A)
 - [x] Delete meeting + cascade soft delete sync (child entities)
 - [x] Empty states
 
 ## V1.1 — Polish
 
-- [ ] Push notifications (processing complete)
+- [x] Push notifications (processing complete) — FCM v1 API, service account OAuth2, token sync, needs end-to-end test
 - [x] Search meetings
 - [x] Edit meeting title
 - [x] Pull-to-refresh
