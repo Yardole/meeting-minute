@@ -53,7 +53,6 @@ serve(async (req) => {
       body: JSON.stringify({
         audio_url: audioUrl,
         speaker_labels: true,
-        speakers_expected: 6,
       }),
     })
 
