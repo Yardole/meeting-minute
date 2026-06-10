@@ -29,4 +29,8 @@ node_modules/
 # Env
 .env
 *.env.local
+
+# Service account keys
+supabase/functions/firebase/
+
 .gstack/
