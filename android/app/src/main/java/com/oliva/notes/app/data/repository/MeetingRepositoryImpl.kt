@@ -78,7 +78,7 @@ class MeetingRepositoryImpl @Inject constructor(
                     id = seg.id,
                     meetingId = seg.meetingId,
                     speakerId = seg.speakerId,
-                    speakerName = speaker?.name ?: speaker?.label ?: "Unknown",
+                    speakerName = speaker?.name?.takeIf { it.isNotBlank() } ?: speaker?.label ?: "Unknown",
                     text = seg.text,
                     startTimeMs = seg.startTimeMs,
                     endTimeMs = seg.endTimeMs,
@@ -418,7 +418,7 @@ class MeetingRepositoryImpl @Inject constructor(
         database.speakerDao().update(speakerEntity)
 
         // Update summary text — replace old label with new name (no API call)
-        val newName = speaker.name ?: speaker.label
+        val newName = speaker.name?.takeIf { it.isNotBlank() } ?: speaker.label
         database.summaryDao().getByMeetingId(speaker.meetingId)?.let { summaryEntity ->
             val updatedContent = summaryEntity.content.replace(oldLabel, newName)
             if (updatedContent != summaryEntity.content) {
@@ -452,7 +452,7 @@ class MeetingRepositoryImpl @Inject constructor(
 
         return allSegments.joinToString("\n") { seg ->
             val spk = seg.speakerId?.let { speakerMap[it] }
-            val name = spk?.name ?: spk?.label ?: "Speaker"
+            val name = spk?.name?.takeIf { it.isNotBlank() } ?: spk?.label ?: "Speaker"
             "$name: ${seg.text}"
         }
     }
