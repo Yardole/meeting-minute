@@ -213,3 +213,37 @@ API keys (Assembly AI, DeepSeek) live in Edge Function secrets. Never client-sid
 | 2026-06-06 | Inline bottom-bar player | Fastest UX; no full-screen context switch |
 | 2026-06-06 | Auto speaker labels + manual rename | Assembly AI gives "Speaker A"; user maps to real names after |
 | 2026-06-06 | `profiles` table in public schema | Mirrors `auth.users` for `display_name`, `avatar_url`; `auth.users` is auto-generated |
+| 2026-06-11 | FCM via service account, key in env var | Service account JSON stored as `FCM_SERVICE_ACCOUNT_JSON` Supabase secret; never in repo |
+
+---
+
+## Push Notifications (FCM)
+
+### Architecture
+
+FCM v1 API uses OAuth2 with a Google Cloud service account key. The key is stored as a Supabase Edge Function secret (`FCM_SERVICE_ACCOUNT_JSON`) and read at runtime by `_shared/fcm.ts` via `Deno.env.get()`.
+
+### Setup on a new machine or Supabase project
+
+1. Go to [Google Cloud Console → IAM → Service Accounts](https://console.cloud.google.com/iam-admin/serviceaccounts) for the Firebase project (`oliva-meeting-minutes`)
+2. Create or select the `firebase-adminsdk-fbsvc` service account
+3. Keys → Add Key → Create new key → JSON
+4. Copy the entire JSON content
+5. Set the Supabase secret:
+   ```bash
+   supabase secrets set FCM_SERVICE_ACCOUNT_JSON='{"type":"service_account",...}'
+   ```
+6. Deploy the Edge Functions:
+   ```bash
+   supabase functions deploy transcribe summarize
+   ```
+
+### Files involved
+- `supabase/functions/_shared/fcm.ts` — OAuth2 token + FCM v1 send logic
+- `supabase/functions/transcribe/index.ts` — calls `sendPush()` on completion
+- `supabase/functions/summarize/index.ts` — calls `sendPush()` on completion
+- `supabase/migrations/20250608000011_add_fcm_token.sql` — `profiles.fcm_token` column
+
+### Important
+- The JSON key file is **gitignored** (`supabase/functions/firebase/`) and must **never** be committed
+- Rotate the key in GCP if it's ever accidentally exposed
