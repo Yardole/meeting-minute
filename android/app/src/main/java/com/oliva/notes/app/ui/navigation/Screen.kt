@@ -1,9 +1,13 @@
 package com.oliva.notes.app.ui.navigation
 
-sealed class Screen(val route: String) {
-    data object Home : Screen("home")
-    data object Recording : Screen("recording")
-    data object MeetingDetail : Screen("meeting/{meetingId}") {
-        fun createRoute(meetingId: String) = "meeting/$meetingId"
-    }
-}
+import androidx.navigation3.runtime.NavKey
+import kotlinx.serialization.Serializable
+
+@Serializable
+data object HomeRoute : NavKey
+
+@Serializable
+data object RecordingRoute : NavKey
+
+@Serializable
+data class MeetingDetailRoute(val meetingId: String) : NavKey

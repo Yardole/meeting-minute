@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -46,10 +47,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
-@OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
 @Composable
 fun RecordingScreen(
-    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
     sharedTransitionScope: androidx.compose.animation.SharedTransitionScope,
     onNavigateToMeeting: (String) -> Unit,
     onNavigateHome: () -> Unit,
@@ -126,8 +125,6 @@ fun RecordingScreen(
             elapsedMs = elapsedMs,
             onStartRecording = { viewModel.startRecording() },
             onStopRecording = { viewModel.stopRecording() },
-            sharedTransitionScope = sharedTransitionScope,
-            animatedVisibilityScope = animatedVisibilityScope
         )
     }
 }
@@ -325,7 +322,8 @@ private fun ProcessingScreen(
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(bottom = 48.dp)
+                    .navigationBarsPadding()
+                    .padding(bottom = 16.dp)
                     .clip(RoundedCornerShape(12.dp))
                     .background(MaterialTheme.colorScheme.secondaryContainer)
                     .clickable { onNavigateHome() }
@@ -344,14 +342,11 @@ private fun ProcessingScreen(
     }
 }
 
-@OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
 @Composable
 private fun RecordingActiveScreen(
     elapsedMs: Long,
     onStartRecording: () -> Unit,
     onStopRecording: () -> Unit,
-    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope,
-    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope
 ) {
     var hasPermission by remember { mutableStateOf(false) }
 
@@ -407,24 +402,16 @@ private fun RecordingActiveScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Ripples + button stacked together — shared element from FAB
-            with(sharedTransitionScope) {
-                Box(
-                    modifier = Modifier
-                        .size(140.dp)
-                        .sharedBounds(
-                            rememberSharedContentState(key = "record-btn"),
-                            animatedVisibilityScope = animatedVisibilityScope
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                // Ripple waves behind the button
+            // Ripple waves + pulsing record button
+            Box(
+                modifier = Modifier.size(140.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 RecordingRipples(
                     color = MaterialTheme.colorScheme.error,
                     baseSizeDp = 140
                 )
 
-                // Pulsing record button on top
                 Box(
                     modifier = Modifier
                         .size(140.dp)
@@ -442,7 +429,6 @@ private fun RecordingActiveScreen(
                     )
                 }
             }
-            } // end with(sharedTransitionScope)
 
             Spacer(modifier = Modifier.height(40.dp))
 

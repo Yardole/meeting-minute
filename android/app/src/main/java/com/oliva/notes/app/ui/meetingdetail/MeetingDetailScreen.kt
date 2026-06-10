@@ -1,8 +1,8 @@
 package com.oliva.notes.app.ui.meetingdetail
 
+import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,12 +16,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -80,14 +82,14 @@ import com.oliva.notes.app.ui.components.EdgeScrollHaptics
 import com.oliva.notes.app.ui.components.ShareSheet
 import java.util.UUID
 
-@Composable
 @OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
 fun MeetingDetailScreen(
     meetingId: String,
     onBackClick: () -> Unit,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
-    viewModel: MeetingDetailViewModel = hiltViewModel()
+    viewModel: MeetingDetailViewModel = hiltViewModel(),
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val meeting by viewModel.meeting.collectAsState()
     val segments by viewModel.transcriptSegments.collectAsState()
@@ -150,17 +152,23 @@ fun MeetingDetailScreen(
     }
 
     Scaffold { padding ->
-        with(sharedTransitionScope) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .sharedBounds(
-                    rememberSharedContentState(key = "meeting-$meetingId"),
-                    animatedVisibilityScope = animatedVisibilityScope,
-                    resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
+                .then(
+                    if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+                        with(sharedTransitionScope) {
+                            Modifier.sharedBounds(
+                                rememberSharedContentState(key = "meeting-$meetingId"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            )
+                        }
+                    } else {
+                        Modifier
+                    }
                 )
-                .padding(padding)
+                .background(MaterialTheme.colorScheme.background)
+                .statusBarsPadding()
         ) {
             val isLandscape =
                 androidx.compose.ui.platform.LocalConfiguration.current.orientation ==
@@ -390,7 +398,6 @@ fun MeetingDetailScreen(
                 }
             }
         }
-        } // end with(sharedTransitionScope)
     }
 
     // Share bottom sheet
@@ -415,9 +422,12 @@ private fun MinutesTab(
         EdgeScrollHaptics(listState, haptic)
         LazyColumn(
             state = listState,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 16.dp,
+                end = 16.dp,
+                bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+            )
         ) {
             item {
                 Text(
@@ -536,9 +546,12 @@ private fun TranscriptTab(
     EdgeScrollHaptics(listState, haptic)
     LazyColumn(
         state = listState,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            end = 16.dp,
+            bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        )
     ) {
         itemsIndexed(segments) { _, segment ->
             Column(modifier = Modifier.padding(vertical = 8.dp)) {
@@ -602,7 +615,7 @@ private fun ChatTab(
     onInputChanged: (String) -> Unit,
     onSend: () -> Unit
 ) {
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(modifier = Modifier.fillMaxSize().imePadding()) {
         val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
         // Message area — scrolls fully behind the input bar

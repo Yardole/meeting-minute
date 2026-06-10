@@ -1,6 +1,5 @@
 package com.oliva.notes.app.ui.meetingdetail
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.oliva.notes.app.data.audio.AudioPlayer
@@ -9,6 +8,10 @@ import com.oliva.notes.app.domain.model.Meeting
 import com.oliva.notes.app.domain.model.Speaker
 import com.oliva.notes.app.domain.model.TranscriptSegment
 import com.oliva.notes.app.domain.repository.MeetingRepository
+import com.oliva.notes.app.ui.navigation.MeetingDetailRoute
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,16 +21,19 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
-@HiltViewModel
-class MeetingDetailViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+@HiltViewModel(assistedFactory = MeetingDetailViewModel.Factory::class)
+class MeetingDetailViewModel @AssistedInject constructor(
+    @Assisted private val navKey: MeetingDetailRoute,
     private val meetingRepository: MeetingRepository,
     private val audioPlayer: AudioPlayer
 ) : ViewModel() {
 
-    val meetingId: String = savedStateHandle.get<String>("meetingId") ?: ""
+    @AssistedFactory
+    interface Factory {
+        fun create(navKey: MeetingDetailRoute): MeetingDetailViewModel
+    }
 
-    private val mid = UUID.fromString(meetingId)
+    private val mid = UUID.fromString(navKey.meetingId)
 
     val meeting: StateFlow<Meeting?> = meetingRepository.observeMeeting(mid)
         .stateIn(

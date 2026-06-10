@@ -1,6 +1,8 @@
 package com.oliva.notes.app.ui.home
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -19,12 +21,14 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -82,11 +86,11 @@ import com.oliva.notes.app.domain.model.Meeting
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class, androidx.compose.animation.ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun HomeScreen(
-    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope,
-    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     onMeetingClick: (String) -> Unit,
     onRecordClick: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
@@ -204,31 +208,25 @@ fun HomeScreen(
                                     )
                                 }
                             }
-                            with(sharedTransitionScope) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(56.dp)
-                                        .sharedBounds(
-                                            rememberSharedContentState(key = "record-btn"),
-                                            animatedVisibilityScope = animatedVisibilityScope
-                                        )
-                                        .clip(CircleShape)
-                                        .background(MaterialTheme.colorScheme.error)
-                                        .clickable(
-                                            indication = null,
-                                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
-                                        ) {
-                                            onRecordClick()
-                                        },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Mic,
-                                        contentDescription = "Record meeting",
-                                        tint = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                }
+                            Box(
+                                modifier = Modifier
+                                    .size(56.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.error)
+                                    .clickable(
+                                        indication = null,
+                                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+                                    ) {
+                                        onRecordClick()
+                                    },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Mic,
+                                    contentDescription = "Record meeting",
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(28.dp)
+                                )
                             }
                         }
                     }
@@ -291,13 +289,13 @@ fun HomeScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
                 .background(MaterialTheme.colorScheme.background)
         ) {
         val focusManager = LocalFocusManager.current
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .pointerInput(Unit) {
                     detectTapGestures { focusManager.clearFocus() }
                 }
@@ -446,10 +444,13 @@ fun HomeScreen(
                 } else {
                     LazyColumn(
                         state = listState,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp)
-                            .padding(top = 12.dp),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            start = 16.dp,
+                            end = 16.dp,
+                            top = 12.dp,
+                            bottom = padding.calculateBottomPadding()
+                        ),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(meetings, key = { it.id }) { meeting ->
@@ -458,7 +459,7 @@ fun HomeScreen(
                                 onClick = { onMeetingClick(meeting.id.toString()) },
                                 onDelete = { viewModel.deleteMeeting(meeting.id) },
                                 sharedTransitionScope = sharedTransitionScope,
-                                animatedVisibilityScope = animatedVisibilityScope
+                                animatedVisibilityScope = animatedVisibilityScope,
                             )
                         }
                     }
@@ -476,14 +477,14 @@ fun HomeScreen(
 } // end Scaffold content
 }
 
-@OptIn(androidx.compose.animation.ExperimentalSharedTransitionApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun MeetingListItem(
     meeting: Meeting,
     onClick: () -> Unit,
     onDelete: () -> Unit,
-    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope,
-    animatedVisibilityScope: androidx.compose.animation.AnimatedVisibilityScope
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val density = androidx.compose.ui.platform.LocalDensity.current
@@ -569,7 +570,6 @@ private fun MeetingListItem(
                         .sharedBounds(
                             rememberSharedContentState(key = "meeting-${meeting.id}"),
                             animatedVisibilityScope = animatedVisibilityScope,
-                            resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
                         )
                         .clip(RoundedCornerShape(14.dp))
                         .background(MaterialTheme.colorScheme.surface)
