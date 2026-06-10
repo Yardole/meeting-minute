@@ -18,8 +18,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -55,7 +54,9 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -836,16 +837,36 @@ private fun AnimatedTabRow(
     }
 
     val targetRect = tabPositions.getOrNull(selectedIndex) ?: androidx.compose.ui.geometry.Rect.Zero
-    val animOffsetX by animateFloatAsState(
-        targetValue = targetRect.left,
-        animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f),
-        label = "tabOffset"
-    )
-    val animWidth by animateFloatAsState(
-        targetValue = targetRect.width,
-        animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f),
-        label = "tabWidth"
-    )
+    val animOffsetX = remember { Animatable(0f) }
+    val animWidth = remember { Animatable(0f) }
+    var ready by remember { mutableStateOf(false) }
+
+    LaunchedEffect(targetRect) {
+        if (targetRect.width > 0f) {
+            if (!ready) {
+                // First measurement: snap into position
+                animOffsetX.snapTo(targetRect.left)
+                animWidth.snapTo(targetRect.width)
+                ready = true
+            } else {
+                // Subsequent tab switches: animate both in parallel
+                kotlinx.coroutines.coroutineScope {
+                    launch {
+                        animOffsetX.animateTo(
+                            targetRect.left,
+                            animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f)
+                        )
+                    }
+                    launch {
+                        animWidth.animateTo(
+                            targetRect.width,
+                            animationSpec = spring(dampingRatio = 0.7f, stiffness = 400f)
+                        )
+                    }
+                }
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -855,9 +876,9 @@ private fun AnimatedTabRow(
         // Animated pill indicator
         Box(
             modifier = Modifier
-                .offset { IntOffset(animOffsetX.toInt(), 0) }
+                .offset { IntOffset(animOffsetX.value.toInt(), 0) }
                 .size(
-                    width = with(density) { animWidth.toDp() },
+                    width = with(density) { animWidth.value.toDp() },
                     height = 32.dp
                 )
                 .clip(RoundedCornerShape(16.dp))
