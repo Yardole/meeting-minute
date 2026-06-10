@@ -576,16 +576,23 @@ private fun MeetingListItem(
                         .clickable(onClick = onClick)
                         .padding(horizontal = 16.dp, vertical = 14.dp)
                 ) {
-                    MeetingContentInner(meeting = meeting)
+                    MeetingContentInner(
+                        meeting = meeting,
+                        sharedTransitionScope = sharedTransitionScope,
+                        animatedVisibilityScope = animatedVisibilityScope,
+                    )
                 }
             }
         }
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun MeetingContentInner(
-    meeting: Meeting
+    meeting: Meeting,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     val formatter = DateTimeFormatter.ofPattern("MMM d", Locale.getDefault())
     val dateStr = java.time.Instant
@@ -596,6 +603,7 @@ private fun MeetingContentInner(
     val durationMin = meeting.durationMs / 60000
     val durationStr = if (durationMin < 1) "${meeting.durationMs / 1000} sec" else "$durationMin min"
 
+    with(sharedTransitionScope) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -609,13 +617,23 @@ private fun MeetingContentInner(
                     fontSize = 15.sp
                 ),
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.sharedBounds(
+                    rememberSharedContentState(key = "meeting-${meeting.id}-title"),
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
+                )
             )
             Text(
                 text = "$dateStr · $durationStr",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
+                ),
+                modifier = Modifier.sharedBounds(
+                    rememberSharedContentState(key = "meeting-${meeting.id}-date"),
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
                 )
             )
         }
@@ -637,4 +655,5 @@ private fun MeetingContentInner(
             )
         }
     }
+    } // with(sharedTransitionScope)
 }

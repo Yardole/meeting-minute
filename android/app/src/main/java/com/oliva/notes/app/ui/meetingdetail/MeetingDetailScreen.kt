@@ -272,6 +272,17 @@ fun MeetingDetailScreen(
                         fontSize = titleFontSize
                     ),
                     modifier = Modifier
+                        .then(
+                            if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+                                with(sharedTransitionScope) {
+                                    Modifier.sharedBounds(
+                                        rememberSharedContentState(key = "meeting-$meetingId-title"),
+                                        animatedVisibilityScope = animatedVisibilityScope,
+                                        resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
+                                    )
+                                }
+                            } else Modifier
+                        )
                         .padding(horizontal = 16.dp, vertical = titleVPadding)
                         .clickable {
                             editText = meeting?.title ?: ""
@@ -295,7 +306,19 @@ fun MeetingDetailScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 13.sp
                     ),
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    modifier = Modifier
+                        .then(
+                            if (sharedTransitionScope != null && animatedVisibilityScope != null) {
+                                with(sharedTransitionScope) {
+                                    Modifier.sharedBounds(
+                                        rememberSharedContentState(key = "meeting-$meetingId-date"),
+                                        animatedVisibilityScope = animatedVisibilityScope,
+                                        resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
+                                    )
+                                }
+                            } else Modifier
+                        )
+                        .padding(horizontal = 16.dp)
                 )
             }
 
