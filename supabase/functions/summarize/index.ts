@@ -35,12 +35,17 @@ serve(async (req) => {
 1. A short, descriptive meeting title (5-8 words max) that captures the main topic.
 2. A concise, well-structured summary covering key decisions, action items, and important discussion points.
 3. A list of key points (3-7 bullet points) highlighting the most important takeaways.
+4. Identify speaker names from the conversation context. The transcript labels speakers generically (e.g. "Speaker A", "Speaker B"). Use context clues like introductions ("Hi, I'm John"), names used in conversation ("What do you think, Sarah?"), and self-references to figure out each speaker's actual name. If you cannot determine a name, use null for that speaker.
 
 You must respond with a JSON object in this exact format:
 {
   "title": "Short descriptive title here",
   "content": "Full meeting summary here...",
-  "key_points": ["Key point 1", "Key point 2", "Key point 3"]
+  "key_points": ["Key point 1", "Key point 2", "Key point 3"],
+  "speakers": {
+    "Speaker A": "John",
+    "Speaker B": "Sarah"
+  }
 }`
 
     const response = await fetch(DEEPSEEK_URL, {
@@ -50,13 +55,12 @@ You must respond with a JSON object in this exact format:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
+        model: 'deepseek-v4-flash',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Please summarize this meeting transcript:\n\n${transcript}` }
         ],
         temperature: 0.3,
-        max_tokens: 4096,
       }),
     })
 
@@ -102,6 +106,26 @@ You must respond with a JSON object in this exact format:
 
     await supabase.from('meetings').update({ status: 'summarized', title }).eq('id', meetingId)
 
+    // Auto-name speakers if AI identified them
+    if (parsed.speakers) {
+      const { data: existingSpeakers } = await supabase
+        .from('speakers')
+        .select('id, label, name')
+        .eq('meeting_id', meetingId)
+        .is('deleted_at', null)
+
+      if (existingSpeakers) {
+        for (const speaker of existingSpeakers) {
+          const detectedName = parsed.speakers[speaker.label]
+          if (detectedName && !speaker.name) {
+            await supabase.from('speakers')
+              .update({ name: detectedName })
+              .eq('id', speaker.id)
+          }
+        }
+      }
+    }
+
     // Send push notification
     const { data: meeting } = await supabase.from('meetings').select('user_id').eq('id', meetingId).single()
     if (meeting?.user_id) {
@@ -118,6 +142,7 @@ You must respond with a JSON object in this exact format:
         title,
         content: parsed.content || content,
         keyPoints: parsed.key_points || [],
+        speakers: parsed.speakers || {},
       }),
       { headers: { 'Content-Type': 'application/json' } }
     )

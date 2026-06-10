@@ -16,6 +16,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -34,6 +35,13 @@ class MeetingDetailViewModel @AssistedInject constructor(
     }
 
     private val mid = UUID.fromString(navKey.meetingId)
+
+    companion object {
+        val greeting = Pair(
+            ChatRole.ASSISTANT,
+            "Hey there! What would you like to know about this meeting? I can summarize, pull out key points, or answer any questions you have."
+        )
+    }
 
     val meeting: StateFlow<Meeting?> = meetingRepository.observeMeeting(mid)
         .stateIn(
@@ -59,10 +67,11 @@ class MeetingDetailViewModel @AssistedInject constructor(
 
     val chatMessages: StateFlow<List<Pair<ChatRole, String>>> =
         meetingRepository.observeChatMessages(mid)
+            .map { listOf(greeting) + it }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5000),
-                initialValue = emptyList()
+                initialValue = listOf(greeting)
             )
 
     val speakers: StateFlow<List<Speaker>> = meetingRepository.observeSpeakers(mid)

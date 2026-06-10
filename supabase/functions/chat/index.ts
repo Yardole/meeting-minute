@@ -64,10 +64,9 @@ ${transcript}`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
+        model: 'deepseek-v4-flash',
         messages,
         temperature: 0.7,
-        max_tokens: 2048,
       }),
     })
 

@@ -326,6 +326,21 @@ class MeetingRepositoryImpl @Inject constructor(
                 )
                 database.summaryDao().insert(summaryEntity)
 
+                // Auto-name speakers if AI identified them
+                val speakersJson = json.optJSONObject("speakers")
+                if (speakersJson != null) {
+                    val allSpeakers = database.speakerDao().getByMeetingId(meetingId)
+                    for (speaker in allSpeakers) {
+                        val detectedName = speakersJson.optString(speaker.label, null)
+                        if (!detectedName.isNullOrBlank() && speaker.name.isNullOrBlank()) {
+                            database.speakerDao().update(
+                                speaker.copy(name = detectedName, updatedAt = Instant.now())
+                            )
+                            Log.d("MeetingRepo", "Auto-named ${speaker.label} → $detectedName")
+                        }
+                    }
+                }
+
                 val updatedEntity = database.meetingDao().getById(meetingId)
                 updatedEntity?.let { e ->
                     database.meetingDao().update(

@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,7 +20,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -69,6 +72,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -619,66 +623,39 @@ private fun ChatTab(
     Box(modifier = Modifier.fillMaxSize().imePadding()) {
         val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
-        // Message area — scrolls fully behind the input bar
-        if (messages.isEmpty()) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = "Ask Oliva",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontFamily = com.oliva.notes.app.ui.theme.Fraunces,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f)
-                        )
-                    )
-                    Text(
-                        text = "Ask questions about this meeting.",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
+        // Message area
+        val listState = rememberLazyListState()
+        EdgeScrollHaptics(listState, haptic)
+
+        LaunchedEffect(messages.size) {
+            if (messages.isNotEmpty()) {
+                delay(50)
+                val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
+                if (lastVisible >= messages.size - 3 || lastVisible == -1) {
+                    listState.animateScrollToItem(messages.size - 1)
                 }
             }
-        } else {
-            val listState = rememberLazyListState()
-            EdgeScrollHaptics(listState, haptic)
+        }
 
-            LaunchedEffect(messages.size) {
-                if (messages.isNotEmpty()) {
-                    delay(50)
-                    val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1
-                    if (lastVisible >= messages.size - 3 || lastVisible == -1) {
-                        listState.animateScrollToItem(messages.size - 1)
-                    }
-                }
-            }
-
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 16.dp),
-                contentPadding = PaddingValues(
-                    top = 12.dp,
-                    bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 88.dp
-                ),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(messages.size) { index ->
-                    val (role, content) = messages[index]
-                    val isUser = role == ChatRole.USER
-                    ChatBubble(
-                        message = content,
-                        isUser = isUser,
-                        roleLabel = if (isUser) "You" else "Oliva"
-                    )
-                }
+        LazyColumn(
+            state = listState,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            contentPadding = PaddingValues(
+                top = 12.dp,
+                bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 88.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(messages.size) { index ->
+                val (role, content) = messages[index]
+                val isUser = role == ChatRole.USER
+                ChatBubble(
+                    message = content,
+                    isUser = isUser,
+                    roleLabel = if (isUser) "You" else "Oliva"
+                )
             }
         }
 
@@ -713,10 +690,31 @@ private fun ChatTab(
                 .navigationBarsPadding(),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            var isInputFocused by remember { mutableStateOf(false) }
+            val inputBgAlpha by animateFloatAsState(
+                targetValue = if (isInputFocused) 1f else 0.5f,
+                animationSpec = tween(400),
+                label = "inputBgAlpha"
+            )
+            val inputBorderAlpha by animateFloatAsState(
+                targetValue = if (isInputFocused) 1f else 0.25f,
+                animationSpec = tween(400),
+                label = "inputBorderAlpha"
+            )
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = inputBgAlpha))
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = inputBorderAlpha), RoundedCornerShape(14.dp))
+            ) {
             OutlinedTextField(
                 value = inputText,
                 onValueChange = onInputChanged,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { isInputFocused = it.isFocused },
                 placeholder = {
                     Text(
                         "Ask about this meeting...",
@@ -724,8 +722,10 @@ private fun ChatTab(
                     )
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent
                 ),
@@ -756,6 +756,7 @@ private fun ChatTab(
                     }
                 }
             )
+            } // end wrapping Box
         }
     }
 }
