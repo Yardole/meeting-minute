@@ -233,9 +233,9 @@ FCM v1 API uses OAuth2 with a Google Cloud service account key. The key is store
    ```bash
    supabase secrets set FCM_SERVICE_ACCOUNT_JSON='{"type":"service_account",...}'
    ```
-6. Deploy the Edge Functions:
+6. Deploy the Edge Functions (**always use `--no-verify-jwt`** — the Android client uses `apikey`, not a user Bearer token):
    ```bash
-   supabase functions deploy transcribe summarize
+   supabase functions deploy transcribe summarize chat --no-verify-jwt
    ```
 
 ### Files involved
