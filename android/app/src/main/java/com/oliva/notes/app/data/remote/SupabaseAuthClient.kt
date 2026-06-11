@@ -23,7 +23,6 @@ class SupabaseAuthClient @Inject constructor(
     private val context: Context
 ) {
     private var currentSession: AuthSession? = null
-
     private val prefs = context.getSharedPreferences("auth", Context.MODE_PRIVATE)
 
     val userId: String?
@@ -42,13 +41,11 @@ class SupabaseAuthClient @Inject constructor(
                     setRequestProperty("Content-Type", "application/json")
                     doOutput = true
                 }
-
                 val body = JSONObject().apply {
                     put("email", email)
                     put("password", password)
                 }
                 connection.outputStream.use { it.write(body.toString().toByteArray()) }
-
                 val code = connection.responseCode
                 val response = if (code in 200..299)
                     connection.inputStream.bufferedReader().readText()
@@ -60,10 +57,9 @@ class SupabaseAuthClient @Inject constructor(
 
                 if (code in 200..299) {
                     val json = JSONObject(response)
-                    // Email confirmation might be required — check for session
                     val accessToken = json.optString("access_token", null)
                     if (accessToken.isNullOrEmpty()) {
-                        throw Exception("Confirmation email sent — check your inbox.")
+                        throw Exception("Check your email to confirm your account.")
                     }
                     val session = AuthSession(
                         userId = json.getJSONObject("user").getString("id"),
@@ -90,13 +86,11 @@ class SupabaseAuthClient @Inject constructor(
                     setRequestProperty("Content-Type", "application/json")
                     doOutput = true
                 }
-
                 val body = JSONObject().apply {
                     put("email", email)
                     put("password", password)
                 }
                 connection.outputStream.use { it.write(body.toString().toByteArray()) }
-
                 val code = connection.responseCode
                 val response = if (code in 200..299)
                     connection.inputStream.bufferedReader().readText()
@@ -132,7 +126,6 @@ class SupabaseAuthClient @Inject constructor(
                         requestMethod = "POST"
                         setRequestProperty("apikey", config.anonKey)
                         setRequestProperty("Authorization", "Bearer ${session.accessToken}")
-                        doOutput = false
                     }
                     connection.responseCode
                     connection.disconnect()
