@@ -11,6 +11,7 @@ import com.oliva.notes.app.data.local.entity.MeetingStatus
 import com.oliva.notes.app.data.local.entity.SpeakerEntity
 import com.oliva.notes.app.data.local.entity.SummaryEntity
 import com.oliva.notes.app.data.local.entity.TranscriptSegmentEntity
+import com.oliva.notes.app.data.remote.SupabaseAuthClient
 import com.oliva.notes.app.data.remote.SupabaseConfig
 import com.oliva.notes.app.data.remote.SupabaseEdgeFunctionClient
 import com.oliva.notes.app.data.remote.SupabaseStorageClient
@@ -40,7 +41,8 @@ class MeetingRepositoryImpl @Inject constructor(
     private val storageClient: SupabaseStorageClient,
     private val config: SupabaseConfig,
     private val edgeFunctionClient: SupabaseEdgeFunctionClient,
-    private val connectivityObserver: ConnectivityObserver
+    private val connectivityObserver: ConnectivityObserver,
+    private val authClient: SupabaseAuthClient,
 ) : MeetingRepository {
 
     // Scope that outlives any individual ViewModel for background processing
@@ -106,7 +108,7 @@ class MeetingRepositoryImpl @Inject constructor(
     override suspend fun createMeeting(title: String, localAudioPath: String): Meeting {
         val durationMs = getAudioDuration(localAudioPath)
         val entity = MeetingEntity(
-            userId = UUID.randomUUID(),
+            userId = UUID.fromString(authClient.userId ?: "00000000-0000-0000-0000-000000000000"),
             title = title,
             localAudioPath = localAudioPath,
             durationMs = durationMs,

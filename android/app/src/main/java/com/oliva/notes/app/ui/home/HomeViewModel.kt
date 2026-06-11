@@ -3,6 +3,7 @@ package com.oliva.notes.app.ui.home
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.oliva.notes.app.data.remote.SupabaseAuthClient
 import com.oliva.notes.app.data.sync.SyncManager
 import com.oliva.notes.app.domain.model.Meeting
 import com.oliva.notes.app.domain.repository.MeetingRepository
@@ -20,7 +21,8 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val meetingRepository: MeetingRepository,
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val authClient: SupabaseAuthClient,
 ) : ViewModel() {
 
     val meetings: StateFlow<List<Meeting>> = meetingRepository.observeMeetings()
@@ -77,8 +79,7 @@ class HomeViewModel @Inject constructor(
     fun triggerSync() {
         viewModelScope.launch {
             try {
-                // Use a placeholder user ID — in production this comes from Supabase Auth
-                val userId = UUID.fromString("00000000-0000-0000-0000-000000000001")
+                val userId = UUID.fromString(authClient.userId ?: return@launch)
                 syncManager.syncAll(userId)
                     .onSuccess { Log.d("HomeVM", "Sync completed") }
                     .onFailure { Log.e("HomeVM", "Sync failed", it) }
