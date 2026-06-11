@@ -8,7 +8,7 @@ import com.oliva.notes.app.data.remote.SupabaseClientProvider
 import com.oliva.notes.app.data.remote.SupabaseConfig
 import com.oliva.notes.app.data.remote.SupabaseEdgeFunctionClient
 import com.oliva.notes.app.data.remote.SupabaseStorageClient
-import com.oliva.notes.app.data.connectivity.ConnectivityObserver
+import com.oliva.notes.app.data.remote.SupabaseAuthClient
 import com.oliva.notes.app.data.repository.MeetingRepositoryImpl
 import com.oliva.notes.app.data.sync.SyncManager
 import com.oliva.notes.app.domain.repository.MeetingRepository
@@ -42,6 +42,12 @@ object AppModule {
     fun provideSupabaseConfig(
         provider: SupabaseClientProvider
     ): SupabaseConfig = provider.config
+
+    @Provides
+    @Singleton
+    fun provideSupabaseAuthClient(
+        config: SupabaseConfig
+    ): SupabaseAuthClient = SupabaseAuthClient(config)
 
     @Provides
     @Singleton

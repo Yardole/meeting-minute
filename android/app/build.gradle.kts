@@ -69,6 +69,8 @@ dependencies {
     // Navigation 3
     implementation("androidx.navigation3:navigation3-runtime:1.0.0")
     implementation("androidx.navigation3:navigation3-ui:1.0.0")
+
+    // Supabase
     implementation("androidx.lifecycle:lifecycle-viewmodel-navigation3:2.10.0-rc01")
 
     // KotlinX Serialization (for NavKey routes)

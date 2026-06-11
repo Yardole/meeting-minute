@@ -8,11 +8,17 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.oliva.notes.app.ui.auth.AuthViewModel
+import com.oliva.notes.app.ui.auth.LoginScreen
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -35,11 +41,21 @@ import com.oliva.notes.app.ui.recording.RecordingScreen
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun AppNavigation(
-    sharedTransitionScope: SharedTransitionScope
+    sharedTransitionScope: SharedTransitionScope,
+    authViewModel: AuthViewModel,
 ) {
     with(sharedTransitionScope) {
         Box(modifier = Modifier.fillMaxSize()) {
-            val backStack = remember { mutableStateListOf<NavKey>(HomeRoute) }
+            val authState by authViewModel.state.collectAsState()
+            val backStack = remember { mutableStateListOf<NavKey>(LoginRoute) }
+
+            // Navigate to home when logged in
+            LaunchedEffect(authState.isLoggedIn) {
+                if (authState.isLoggedIn && backStack.lastOrNull() !is HomeRoute) {
+                    backStack.clear()
+                    backStack.add(HomeRoute)
+                }
+            }
 
             NavDisplay(
                 backStack = backStack,
@@ -50,6 +66,13 @@ fun AppNavigation(
                 ),
                 entryProvider = { key: NavKey ->
                     when (key) {
+                        is LoginRoute -> NavEntry(key) {
+                            LoginScreen(
+                                authViewModel = authViewModel,
+                                onLoggedIn = { },
+                            )
+                        }
+
                         is HomeRoute -> NavEntry(key) {
                             val avs = LocalNavAnimatedContentScope.current
                             HomeScreen(
