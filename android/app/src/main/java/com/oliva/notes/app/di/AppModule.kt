@@ -46,8 +46,9 @@ object AppModule {
     @Provides
     @Singleton
     fun provideSupabaseAuthClient(
-        config: SupabaseConfig
-    ): SupabaseAuthClient = SupabaseAuthClient(config)
+        config: SupabaseConfig,
+        @ApplicationContext context: Context,
+    ): SupabaseAuthClient = SupabaseAuthClient(config, context)
 
     @Provides
     @Singleton

@@ -79,7 +79,11 @@ class HomeViewModel @Inject constructor(
     fun triggerSync() {
         viewModelScope.launch {
             try {
-                val userId = UUID.fromString(authClient.userId ?: return@launch)
+                val userIdStr = authClient.userId ?: run {
+                    Log.e("HomeVM", "Sync skipped — no userId")
+                    return@launch
+                }
+                val userId = UUID.fromString(userIdStr)
                 syncManager.syncAll(userId)
                     .onSuccess { Log.d("HomeVM", "Sync completed") }
                     .onFailure { Log.e("HomeVM", "Sync failed", it) }

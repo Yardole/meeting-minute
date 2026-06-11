@@ -1,6 +1,8 @@
 package com.oliva.notes.app.data.remote
 
+import android.content.Context
 import android.util.Log
+import androidx.core.content.edit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -17,15 +19,18 @@ data class AuthSession(
 
 @Singleton
 class SupabaseAuthClient @Inject constructor(
-    private val config: SupabaseConfig
+    private val config: SupabaseConfig,
+    private val context: Context
 ) {
     private var currentSession: AuthSession? = null
 
+    private val prefs = context.getSharedPreferences("auth", Context.MODE_PRIVATE)
+
     val userId: String?
-        get() = currentSession?.userId
+        get() = currentSession?.userId ?: prefs.getString("user_id", null)
 
     val isLoggedIn: Boolean
-        get() = currentSession != null
+        get() = currentSession != null || prefs.contains("user_id")
 
     suspend fun signup(email: String, password: String): Result<AuthSession> =
         withContext(Dispatchers.IO) {
@@ -66,6 +71,7 @@ class SupabaseAuthClient @Inject constructor(
                         refreshToken = json.getString("refresh_token"),
                     )
                     currentSession = session
+                    prefs.edit { putString("user_id", session.userId) }
                     session
                 } else {
                     val msg = JSONObject(response).optString("msg", response)
@@ -108,6 +114,7 @@ class SupabaseAuthClient @Inject constructor(
                         refreshToken = json.getString("refresh_token"),
                     )
                     currentSession = session
+                    prefs.edit { putString("user_id", session.userId) }
                     session
                 } else {
                     val msg = JSONObject(response).optString("error_description", response)
@@ -133,5 +140,6 @@ class SupabaseAuthClient @Inject constructor(
             }
         }
         currentSession = null
+        prefs.edit { remove("user_id") }
     }
 }
