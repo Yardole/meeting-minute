@@ -69,6 +69,11 @@ fun RecordingScreen(
     val tooShort by viewModel.tooShort.collectAsState()
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
+    // Cancel recording if the user leaves this screen without manually stopping
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose { viewModel.cancelRecording() }
+    }
+
     // Haptic: one pulse per ripple wave — first 5 seconds of recording
     LaunchedEffect(isRecording) {
         if (isRecording) {

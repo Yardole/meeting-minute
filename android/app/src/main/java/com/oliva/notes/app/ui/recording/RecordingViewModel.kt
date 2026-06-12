@@ -56,6 +56,16 @@ class RecordingViewModel @Inject constructor(
         _navigateToMeetingId.value = null
     }
 
+    /** Stop any in-progress recording without processing — used when the
+     *  screen is left before the user explicitly stops. */
+    fun cancelRecording() {
+        if (!_isRecording.value) return
+        _isRecording.value = false
+        timerJob?.cancel()
+        _elapsedMs.value = 0L
+        audioRecorder.stopRecording()
+    }
+
     fun startRecording() {
         if (_isRecording.value) return
         _isRecording.value = true
