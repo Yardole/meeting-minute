@@ -40,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
@@ -423,11 +424,20 @@ private fun RecordingActiveScreen(
                 modifier = Modifier.size(140.dp),
                 contentAlignment = Alignment.Center
             ) {
+                // Ripples appear after the sharedBounds morph finishes
+                var showRipples by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) {
+                    delay(400)
+                    showRipples = true
+                }
+
                 // Ripple waves behind the button
-                RecordingRipples(
-                    color = MaterialTheme.colorScheme.error,
-                    baseSizeDp = 140
-                )
+                Box(modifier = Modifier.alpha(if (showRipples) 1f else 0f)) {
+                    RecordingRipples(
+                        color = MaterialTheme.colorScheme.error,
+                        baseSizeDp = 140
+                    )
+                }
 
                 // Button morphs from home FAB via sharedBounds
                 with(sharedTransitionScope) {
