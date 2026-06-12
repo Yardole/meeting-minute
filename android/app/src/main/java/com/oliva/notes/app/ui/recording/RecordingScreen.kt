@@ -417,28 +417,27 @@ private fun RecordingActiveScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Ripples + button stacked together — shared element from FAB
-            with(sharedTransitionScope) {
-                Box(
-                    modifier = Modifier
-                        .size(140.dp)
-                        .sharedBounds(
-                            sharedContentState = rememberSharedContentState(key = "recording-button"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                        )
-                        .clip(CircleShape),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // Ripple waves behind the button
-                    RecordingRipples(
-                        color = MaterialTheme.colorScheme.error,
-                        baseSizeDp = 140
-                    )
+            // Ripples + button stacked. sharedBounds only on the button so
+            // ripples extend beyond naturally (not clipped by the shared overlay).
+            Box(
+                modifier = Modifier.size(140.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                // Ripple waves behind the button
+                RecordingRipples(
+                    color = MaterialTheme.colorScheme.error,
+                    baseSizeDp = 140
+                )
 
-                    // Pulsing record button on top
+                // Button morphs from home FAB via sharedBounds
+                with(sharedTransitionScope) {
                     Box(
                         modifier = Modifier
                             .size(140.dp)
+                            .sharedBounds(
+                                sharedContentState = rememberSharedContentState(key = "recording-button"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            )
                             .scale(pulseScale)
                             .clip(CircleShape)
                             .background(MaterialTheme.colorScheme.error)
