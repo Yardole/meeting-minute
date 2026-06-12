@@ -107,7 +107,6 @@ fun ShareSheet(
             onDismissRequest = onDismiss,
             sheetState = sheetState,
             containerColor = MaterialTheme.colorScheme.surface,
-            scrimColor = Color.Black.copy(alpha = 0.08f),
             shape = RoundedCornerShape(topStart = displayCornerRadius, topEnd = displayCornerRadius),
             dragHandle = {
                 Column(
