@@ -208,9 +208,15 @@ fun HomeScreen(
                                     )
                                 }
                             }
+                            with(sharedTransitionScope) {
                             Box(
                                 modifier = Modifier
                                     .size(56.dp)
+                                    .sharedBounds(
+                                        sharedContentState = rememberSharedContentState(key = "recording-button"),
+                                        animatedVisibilityScope = animatedVisibilityScope,
+                                        resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
+                                    )
                                     .clip(CircleShape)
                                     .background(MaterialTheme.colorScheme.error)
                                     .clickable(
@@ -227,6 +233,7 @@ fun HomeScreen(
                                     tint = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(28.dp)
                                 )
+                            }
                             }
                         }
                     }
@@ -458,8 +465,6 @@ fun HomeScreen(
                                 meeting = meeting,
                                 onClick = { onMeetingClick(meeting.id.toString()) },
                                 onDelete = { viewModel.deleteMeeting(meeting.id) },
-                                sharedTransitionScope = sharedTransitionScope,
-                                animatedVisibilityScope = animatedVisibilityScope,
                             )
                         }
                     }
@@ -477,14 +482,11 @@ fun HomeScreen(
 } // end Scaffold content
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun MeetingListItem(
     meeting: Meeting,
     onClick: () -> Unit,
     onDelete: () -> Unit,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val density = androidx.compose.ui.platform.LocalDensity.current
@@ -563,36 +565,25 @@ private fun MeetingListItem(
                 }
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            with(sharedTransitionScope) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .sharedBounds(
-                            rememberSharedContentState(key = "meeting-${meeting.id}"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                        )
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(MaterialTheme.colorScheme.surface)
-                        .clickable(onClick = onClick)
-                        .padding(horizontal = 16.dp, vertical = 14.dp)
-                ) {
-                    MeetingContentInner(
-                        meeting = meeting,
-                        sharedTransitionScope = sharedTransitionScope,
-                        animatedVisibilityScope = animatedVisibilityScope,
-                    )
-                }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .clickable(onClick = onClick)
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+            ) {
+                MeetingContentInner(
+                    meeting = meeting,
+                )
             }
         }
     }
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun MeetingContentInner(
     meeting: Meeting,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     val formatter = DateTimeFormatter.ofPattern("MMM d", Locale.getDefault())
     val dateStr = java.time.Instant
@@ -603,7 +594,6 @@ private fun MeetingContentInner(
     val durationMin = meeting.durationMs / 60000
     val durationStr = if (durationMin < 1) "${meeting.durationMs / 1000} sec" else "$durationMin min"
 
-    with(sharedTransitionScope) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -618,22 +608,12 @@ private fun MeetingContentInner(
                 ),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.sharedBounds(
-                    rememberSharedContentState(key = "meeting-${meeting.id}-title"),
-                    animatedVisibilityScope = animatedVisibilityScope,
-                    resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
-                )
             )
             Text(
                 text = "$dateStr · $durationStr",
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp
-                ),
-                modifier = Modifier.sharedBounds(
-                    rememberSharedContentState(key = "meeting-${meeting.id}-date"),
-                    animatedVisibilityScope = animatedVisibilityScope,
-                    resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
                 )
             )
         }
@@ -655,5 +635,4 @@ private fun MeetingContentInner(
             )
         }
     }
-    } // with(sharedTransitionScope)
 }

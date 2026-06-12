@@ -1,8 +1,5 @@
 package com.oliva.notes.app.ui.meetingdetail
 
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -87,14 +84,11 @@ import com.oliva.notes.app.ui.components.EdgeScrollHaptics
 import com.oliva.notes.app.ui.components.ShareSheet
 import java.util.UUID
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun MeetingDetailScreen(
     meetingId: String,
     onBackClick: () -> Unit,
     viewModel: MeetingDetailViewModel = hiltViewModel(),
-    sharedTransitionScope: SharedTransitionScope? = null,
-    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     val meeting by viewModel.meeting.collectAsState()
     val segments by viewModel.transcriptSegments.collectAsState()
@@ -160,18 +154,6 @@ fun MeetingDetailScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .then(
-                    if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-                        with(sharedTransitionScope) {
-                            Modifier.sharedBounds(
-                                rememberSharedContentState(key = "meeting-$meetingId"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                            )
-                        }
-                    } else {
-                        Modifier
-                    }
-                )
                 .background(MaterialTheme.colorScheme.background)
                 .statusBarsPadding()
         ) {
@@ -272,17 +254,6 @@ fun MeetingDetailScreen(
                         fontSize = titleFontSize
                     ),
                     modifier = Modifier
-                        .then(
-                            if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-                                with(sharedTransitionScope) {
-                                    Modifier.sharedBounds(
-                                        rememberSharedContentState(key = "meeting-$meetingId-title"),
-                                        animatedVisibilityScope = animatedVisibilityScope,
-                                        resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
-                                    )
-                                }
-                            } else Modifier
-                        )
                         .padding(horizontal = 16.dp, vertical = titleVPadding)
                         .clickable {
                             editText = meeting?.title ?: ""
@@ -307,17 +278,6 @@ fun MeetingDetailScreen(
                         fontSize = 13.sp
                     ),
                     modifier = Modifier
-                        .then(
-                            if (sharedTransitionScope != null && animatedVisibilityScope != null) {
-                                with(sharedTransitionScope) {
-                                    Modifier.sharedBounds(
-                                        rememberSharedContentState(key = "meeting-$meetingId-date"),
-                                        animatedVisibilityScope = animatedVisibilityScope,
-                                        resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds()
-                                    )
-                                }
-                            } else Modifier
-                        )
                         .padding(horizontal = 16.dp)
                 )
             }

@@ -3,6 +3,9 @@ package com.oliva.notes.app.ui.recording
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -47,9 +50,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun RecordingScreen(
-    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     onNavigateToMeeting: (String) -> Unit,
     onNavigateHome: () -> Unit,
     viewModel: RecordingViewModel = hiltViewModel()
@@ -125,6 +130,8 @@ fun RecordingScreen(
             elapsedMs = elapsedMs,
             onStartRecording = { viewModel.startRecording() },
             onStopRecording = { viewModel.stopRecording() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
         )
     }
 }
@@ -342,11 +349,14 @@ private fun ProcessingScreen(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun RecordingActiveScreen(
     elapsedMs: Long,
     onStartRecording: () -> Unit,
     onStopRecording: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     var hasPermission by remember { mutableStateOf(false) }
 
@@ -402,31 +412,41 @@ private fun RecordingActiveScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Ripple waves + pulsing record button
-            Box(
-                modifier = Modifier.size(140.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                RecordingRipples(
-                    color = MaterialTheme.colorScheme.error,
-                    baseSizeDp = 140
-                )
-
+            // Ripples + button stacked together — shared element from FAB
+            with(sharedTransitionScope) {
                 Box(
                     modifier = Modifier
                         .size(140.dp)
-                        .scale(pulseScale)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.error)
-                        .clickable { onStopRecording() },
+                        .sharedBounds(
+                            sharedContentState = rememberSharedContentState(key = "recording-button"),
+                            animatedVisibilityScope = animatedVisibilityScope,
+                        )
+                        .clip(CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
+                    // Ripple waves behind the button
+                    RecordingRipples(
+                        color = MaterialTheme.colorScheme.error,
+                        baseSizeDp = 140
+                    )
+
+                    // Pulsing record button on top
                     Box(
                         modifier = Modifier
-                            .size(34.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(MaterialTheme.colorScheme.background)
-                    )
+                            .size(140.dp)
+                            .scale(pulseScale)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.error)
+                            .clickable { onStopRecording() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(MaterialTheme.colorScheme.background)
+                        )
+                    }
                 }
             }
 
