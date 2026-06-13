@@ -9,6 +9,7 @@ import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -423,49 +424,58 @@ private fun RecordingActiveScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Ripples + button stacked. sharedBounds only on the button so
-            // ripples extend beyond naturally (not clipped by the shared overlay).
             Box(
                 modifier = Modifier.size(140.dp),
                 contentAlignment = Alignment.Center
             ) {
-                // Ripples appear after the sharedBounds morph finishes
-                var showRipples by remember { mutableStateOf(false) }
+                var showEffects by remember { mutableStateOf(false) }
                 LaunchedEffect(Unit) {
                     delay(400)
-                    showRipples = true
+                    showEffects = true
                 }
+                val pulseBlend by animateFloatAsState(
+                    targetValue = if (showEffects) 1f else 0f,
+                    animationSpec = tween(800, easing = LinearEasing),
+                    label = "pulseBlend"
+                )
 
                 // Ripple waves behind the button
-                Box(modifier = Modifier.alpha(if (showRipples) 1f else 0f)) {
+                Box(modifier = Modifier.alpha(if (showEffects) 1f else 0f)) {
                     RecordingRipples(
                         color = MaterialTheme.colorScheme.error,
                         baseSizeDp = 140
                     )
                 }
 
-                // Button morphs from home FAB via sharedBounds
-                with(sharedTransitionScope) {
-                    Box(
-                        modifier = Modifier
-                            .size(140.dp)
-                            .sharedBounds(
-                                sharedContentState = rememberSharedContentState(key = "recording-button"),
-                                animatedVisibilityScope = animatedVisibilityScope,
-                                clipInOverlayDuringTransition = OverlayClip(CircleShape),
-                            )
-                            .scale(pulseScale)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.error)
-                            .clickable { onStopRecording() },
-                        contentAlignment = Alignment.Center
-                    ) {
+                // Pulse wrapper — outside sharedBounds so it doesn't
+                // interfere with the morph overlay in either direction.
+                Box(
+                    modifier = Modifier
+                        .size(140.dp)
+                        .scale(1f + (pulseScale - 1f) * pulseBlend),
+                    contentAlignment = Alignment.Center
+                ) {
+                    with(sharedTransitionScope) {
                         Box(
                             modifier = Modifier
-                                .size(34.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(MaterialTheme.colorScheme.background)
-                        )
+                                .size(140.dp)
+                                .sharedBounds(
+                                    sharedContentState = rememberSharedContentState(key = "recording-button"),
+                                    animatedVisibilityScope = animatedVisibilityScope,
+                                    clipInOverlayDuringTransition = OverlayClip(CircleShape),
+                                )
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.error)
+                                .clickable { onStopRecording() },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(MaterialTheme.colorScheme.background)
+                            )
+                        }
                     }
                 }
             }
