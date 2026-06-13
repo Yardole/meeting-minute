@@ -108,7 +108,7 @@ fun AppNavigation(
                             currentScreen = MeetingDetailRoute(meetingId)
                         },
                         onRecordClick = {
-                            currentScreen = RecordingRoute
+                            currentScreen = RecordingRoute()
                         },
                     )
 
