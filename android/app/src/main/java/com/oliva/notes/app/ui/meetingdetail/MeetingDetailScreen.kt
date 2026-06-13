@@ -38,6 +38,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -102,6 +103,7 @@ fun MeetingDetailScreen(
     val chatInput by viewModel.chatInput.collectAsState()
     val isSending by viewModel.isSending.collectAsState()
     val chatError by viewModel.chatError.collectAsState()
+    val isRetrying by viewModel.isRetrying.collectAsState()
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Minutes", "Transcript", "Chat")
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
@@ -319,7 +321,7 @@ fun MeetingDetailScreen(
                         )
 
                         when (selectedTab) {
-                            0 -> MinutesTab(meeting, summary, onRetry = { viewModel.retryProcessing() })
+                            0 -> MinutesTab(meeting, summary, isRetrying = isRetrying, onRetry = { viewModel.retryProcessing() })
                             1 -> TranscriptTab(
                                 segments = segments,
                                 speakers = speakers,
@@ -402,6 +404,7 @@ fun MeetingDetailScreen(
 private fun MinutesTab(
     meeting: Meeting?,
     summary: String?,
+    isRetrying: Boolean = false,
     onRetry: () -> Unit = {}
 ) {
     if (summary != null) {
@@ -446,10 +449,15 @@ private fun MinutesTab(
             verticalArrangement = Arrangement.Top
         ) {
             val status = meeting?.status?.name ?: ""
+            val showRetrying = isRetrying || status.startsWith("SUMMARIZING") ||
+                status == "TRANSCRIBED" || status.startsWith("TRANSCRIBI") ||
+                status == "UPLOADED"
             Text(
                 text = when {
+                    isRetrying && status == "ERROR" -> "Retrying…"
                     status.startsWith("SUMMARIZING") -> "Generating summary"
                     status == "TRANSCRIBED" || status.startsWith("TRANSCRIBI") -> "Summary pending"
+                    status == "UPLOADED" -> "Processing…"
                     status == "ERROR" -> "An error occurred"
                     else -> "No summary yet"
                 },
@@ -462,8 +470,10 @@ private fun MinutesTab(
             )
             Text(
                 text = when {
+                    isRetrying && status == "ERROR" -> "Reprocessing your meeting…"
                     status.startsWith("SUMMARIZING") -> "Oliva is generating a summary of this meeting."
                     status == "TRANSCRIBED" || status.startsWith("TRANSCRIBI") -> "Transcript is ready. Summary will be generated next."
+                    status == "UPLOADED" -> "Audio uploaded. Starting transcription…"
                     status == "ERROR" -> "An error occurred during processing."
                     else -> "Record and upload audio to generate a summary."
                 },
@@ -472,7 +482,16 @@ private fun MinutesTab(
                 ),
                 modifier = Modifier.padding(top = 8.dp)
             )
-            if (status == "ERROR") {
+            if (showRetrying) {
+                CircularProgressIndicator(
+                    modifier = Modifier
+                        .padding(top = 24.dp)
+                        .size(24.dp),
+                    strokeWidth = 2.dp,
+                    color = com.oliva.notes.app.ui.theme.WarmOlive
+                )
+            }
+            if (status == "ERROR" && !isRetrying) {
                 Box(
                     modifier = Modifier
                         .padding(top = 16.dp)
