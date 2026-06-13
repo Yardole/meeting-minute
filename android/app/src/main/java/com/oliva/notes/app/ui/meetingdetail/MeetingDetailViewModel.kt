@@ -13,6 +13,9 @@ import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import dagger.hilt.android.lifecycle.HiltViewModel
+import com.oliva.notes.app.data.local.entity.MeetingStatus
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -95,6 +98,21 @@ class MeetingDetailViewModel @AssistedInject constructor(
     private val _chatError = MutableStateFlow(false)
     val chatError: StateFlow<Boolean> = _chatError
 
+    private val _isRetrying = MutableStateFlow(false)
+    val isRetrying: StateFlow<Boolean> = _isRetrying
+    private var retryTimeoutJob: Job? = null
+
+    init {
+        viewModelScope.launch {
+            meeting.collect { m ->
+                if (_isRetrying.value && m != null && m.status != MeetingStatus.ERROR) {
+                    _isRetrying.value = false
+                    retryTimeoutJob?.cancel()
+                }
+            }
+        }
+    }
+
     fun onChatInputChanged(value: String) {
         _chatInput.value = value
     }
@@ -125,6 +143,13 @@ class MeetingDetailViewModel @AssistedInject constructor(
     }
 
     fun retryProcessing() {
+        if (_isRetrying.value) return
+        _isRetrying.value = true
+        retryTimeoutJob?.cancel()
+        retryTimeoutJob = viewModelScope.launch {
+            delay(8_000)
+            _isRetrying.value = false
+        }
         viewModelScope.launch {
             meetingRepository.retryProcessing(mid)
         }
