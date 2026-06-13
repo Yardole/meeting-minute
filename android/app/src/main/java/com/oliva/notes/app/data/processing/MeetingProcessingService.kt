@@ -15,6 +15,7 @@ import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import com.oliva.notes.app.data.local.MeetingMinuteDatabase
 import com.oliva.notes.app.data.local.entity.MeetingStatus
+import com.oliva.notes.app.data.sync.SyncManager
 import com.oliva.notes.app.domain.repository.MeetingRepository
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -31,6 +32,7 @@ class MeetingProcessingService : Service() {
 
     @Inject lateinit var meetingRepository: MeetingRepository
     @Inject lateinit var database: MeetingMinuteDatabase
+    @Inject lateinit var syncManager: SyncManager
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
@@ -66,6 +68,10 @@ class MeetingProcessingService : Service() {
         }
 
         try {
+            updateNotification("Syncing…", 0.05f)
+            syncManager.ensureMeetingExistsRemotely(meeting).getOrThrow()
+            Log.d(TAG, "Pre-pipeline sync completed for ${meeting.id}")
+
             when (meeting.status) {
                 MeetingStatus.RECORDED, MeetingStatus.RECORDING -> {
                     fullPipeline(meetingId)
@@ -163,9 +169,10 @@ class MeetingProcessingService : Service() {
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "Meeting processing",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "Shows progress while your meeting is being processed"
+                setSound(null, null)
             }
             context.getSystemService(NotificationManager::class.java)
                 .createNotificationChannel(channel)
