@@ -85,7 +85,7 @@ serve(async (req) => {
           uniqueSpeakers.set(label, {
             id: crypto.randomUUID(),
             label,
-            name: label,
+            name: '',
             order: uniqueSpeakers.size,
           })
         }

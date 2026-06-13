@@ -11,6 +11,7 @@ import com.oliva.notes.app.data.local.entity.MeetingStatus
 import com.oliva.notes.app.data.local.entity.SpeakerEntity
 import com.oliva.notes.app.data.local.entity.SummaryEntity
 import com.oliva.notes.app.data.local.entity.TranscriptSegmentEntity
+import com.oliva.notes.app.data.remote.SupabaseAuthClient
 import com.oliva.notes.app.data.remote.SupabaseConfig
 import com.oliva.notes.app.data.remote.SupabaseEdgeFunctionClient
 import com.oliva.notes.app.data.remote.SupabaseStorageClient
@@ -40,7 +41,8 @@ class MeetingRepositoryImpl @Inject constructor(
     private val storageClient: SupabaseStorageClient,
     private val config: SupabaseConfig,
     private val edgeFunctionClient: SupabaseEdgeFunctionClient,
-    private val connectivityObserver: ConnectivityObserver
+    private val connectivityObserver: ConnectivityObserver,
+    private val authClient: SupabaseAuthClient,
 ) : MeetingRepository {
 
     // Scope that outlives any individual ViewModel for background processing
@@ -78,7 +80,7 @@ class MeetingRepositoryImpl @Inject constructor(
                     id = seg.id,
                     meetingId = seg.meetingId,
                     speakerId = seg.speakerId,
-                    speakerName = speaker?.name ?: speaker?.label ?: "Unknown",
+                    speakerName = speaker?.name?.takeIf { it.isNotBlank() } ?: speaker?.label ?: "Unknown",
                     text = seg.text,
                     startTimeMs = seg.startTimeMs,
                     endTimeMs = seg.endTimeMs,
@@ -106,7 +108,7 @@ class MeetingRepositoryImpl @Inject constructor(
     override suspend fun createMeeting(title: String, localAudioPath: String): Meeting {
         val durationMs = getAudioDuration(localAudioPath)
         val entity = MeetingEntity(
-            userId = UUID.randomUUID(),
+            userId = UUID.fromString(authClient.userId ?: "00000000-0000-0000-0000-000000000000"),
             title = title,
             localAudioPath = localAudioPath,
             durationMs = durationMs,
@@ -326,6 +328,21 @@ class MeetingRepositoryImpl @Inject constructor(
                 )
                 database.summaryDao().insert(summaryEntity)
 
+                // Auto-name speakers if AI identified them
+                val speakersJson = json.optJSONObject("speakers")
+                if (speakersJson != null) {
+                    val allSpeakers = database.speakerDao().getByMeetingId(meetingId)
+                    for (speaker in allSpeakers) {
+                        val detectedName = speakersJson.optString(speaker.label, null)
+                        if (!detectedName.isNullOrBlank() && speaker.name.isNullOrBlank()) {
+                            database.speakerDao().update(
+                                speaker.copy(name = detectedName, updatedAt = Instant.now())
+                            )
+                            Log.d("MeetingRepo", "Auto-named ${speaker.label} → $detectedName")
+                        }
+                    }
+                }
+
                 val updatedEntity = database.meetingDao().getById(meetingId)
                 updatedEntity?.let { e ->
                     database.meetingDao().update(
@@ -403,7 +420,7 @@ class MeetingRepositoryImpl @Inject constructor(
         database.speakerDao().update(speakerEntity)
 
         // Update summary text — replace old label with new name (no API call)
-        val newName = speaker.name ?: speaker.label
+        val newName = speaker.name?.takeIf { it.isNotBlank() } ?: speaker.label
         database.summaryDao().getByMeetingId(speaker.meetingId)?.let { summaryEntity ->
             val updatedContent = summaryEntity.content.replace(oldLabel, newName)
             if (updatedContent != summaryEntity.content) {
@@ -437,7 +454,7 @@ class MeetingRepositoryImpl @Inject constructor(
 
         return allSegments.joinToString("\n") { seg ->
             val spk = seg.speakerId?.let { speakerMap[it] }
-            val name = spk?.name ?: spk?.label ?: "Speaker"
+            val name = spk?.name?.takeIf { it.isNotBlank() } ?: spk?.label ?: "Speaker"
             "$name: ${seg.text}"
         }
     }

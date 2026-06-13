@@ -33,7 +33,7 @@ See [`docs/architecture.md`](docs/architecture.md) for the full data model, sync
 
 - [x] Supabase project created
 - [x] Migrations pushed
-- [x] Edge Functions deployed (`upload-audio`, `transcribe`, `summarize`, `chat`)
+- [x] Edge Functions deployed (`upload-audio`, `transcribe`, `summarize`, `chat`) **Always use `--no-verify-jwt`** — the Android client sends `apikey` not a Bearer token
 - [x] Android app wired with Supabase URL + publishable key
 - [x] Edge Function secrets set (`ASSEMBLY_AI_API_KEY`, `DEEPSEEK_API_KEY`)
 - [ ] Create first user via Supabase Auth (email signup)

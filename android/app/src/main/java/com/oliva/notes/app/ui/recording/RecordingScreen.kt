@@ -3,6 +3,9 @@ package com.oliva.notes.app.ui.recording
 import android.Manifest
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -37,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
@@ -47,9 +51,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun RecordingScreen(
-    sharedTransitionScope: androidx.compose.animation.SharedTransitionScope,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
     onNavigateToMeeting: (String) -> Unit,
     onNavigateHome: () -> Unit,
     viewModel: RecordingViewModel = hiltViewModel()
@@ -63,6 +69,11 @@ fun RecordingScreen(
     val navigateToMeetingId by viewModel.navigateToMeetingId.collectAsState()
     val tooShort by viewModel.tooShort.collectAsState()
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+
+    // Cancel recording if the user leaves this screen without manually stopping
+    androidx.compose.runtime.DisposableEffect(Unit) {
+        onDispose { viewModel.cancelRecording() }
+    }
 
     // Haptic: one pulse per ripple wave — first 5 seconds of recording
     LaunchedEffect(isRecording) {
@@ -125,6 +136,8 @@ fun RecordingScreen(
             elapsedMs = elapsedMs,
             onStartRecording = { viewModel.startRecording() },
             onStopRecording = { viewModel.stopRecording() },
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
         )
     }
 }
@@ -342,11 +355,14 @@ private fun ProcessingScreen(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun RecordingActiveScreen(
     elapsedMs: Long,
     onStartRecording: () -> Unit,
     onStopRecording: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     var hasPermission by remember { mutableStateOf(false) }
 
@@ -402,31 +418,49 @@ private fun RecordingActiveScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Ripple waves + pulsing record button
+            // Ripples + button stacked. sharedBounds only on the button so
+            // ripples extend beyond naturally (not clipped by the shared overlay).
             Box(
                 modifier = Modifier.size(140.dp),
                 contentAlignment = Alignment.Center
             ) {
-                RecordingRipples(
-                    color = MaterialTheme.colorScheme.error,
-                    baseSizeDp = 140
-                )
+                // Ripples appear after the sharedBounds morph finishes
+                var showRipples by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) {
+                    delay(400)
+                    showRipples = true
+                }
 
-                Box(
-                    modifier = Modifier
-                        .size(140.dp)
-                        .scale(pulseScale)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.error)
-                        .clickable { onStopRecording() },
-                    contentAlignment = Alignment.Center
-                ) {
+                // Ripple waves behind the button
+                Box(modifier = Modifier.alpha(if (showRipples) 1f else 0f)) {
+                    RecordingRipples(
+                        color = MaterialTheme.colorScheme.error,
+                        baseSizeDp = 140
+                    )
+                }
+
+                // Button morphs from home FAB via sharedBounds
+                with(sharedTransitionScope) {
                     Box(
                         modifier = Modifier
-                            .size(34.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(MaterialTheme.colorScheme.background)
-                    )
+                            .size(140.dp)
+                            .sharedBounds(
+                                sharedContentState = rememberSharedContentState(key = "recording-button"),
+                                animatedVisibilityScope = animatedVisibilityScope,
+                            )
+                            .scale(pulseScale)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.error)
+                            .clickable { onStopRecording() },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(34.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(MaterialTheme.colorScheme.background)
+                        )
+                    }
                 }
             }
 

@@ -208,9 +208,15 @@ fun HomeScreen(
                                     )
                                 }
                             }
+                            with(sharedTransitionScope) {
                             Box(
                                 modifier = Modifier
                                     .size(56.dp)
+                                    .sharedBounds(
+                                        sharedContentState = rememberSharedContentState(key = "recording-button"),
+                                        animatedVisibilityScope = animatedVisibilityScope,
+                                        resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
+                                    )
                                     .clip(CircleShape)
                                     .background(MaterialTheme.colorScheme.error)
                                     .clickable(
@@ -227,6 +233,7 @@ fun HomeScreen(
                                     tint = MaterialTheme.colorScheme.onPrimary,
                                     modifier = Modifier.size(28.dp)
                                 )
+                            }
                             }
                         }
                     }
@@ -458,8 +465,6 @@ fun HomeScreen(
                                 meeting = meeting,
                                 onClick = { onMeetingClick(meeting.id.toString()) },
                                 onDelete = { viewModel.deleteMeeting(meeting.id) },
-                                sharedTransitionScope = sharedTransitionScope,
-                                animatedVisibilityScope = animatedVisibilityScope,
                             )
                         }
                     }
@@ -477,14 +482,11 @@ fun HomeScreen(
 } // end Scaffold content
 }
 
-@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun MeetingListItem(
     meeting: Meeting,
     onClick: () -> Unit,
     onDelete: () -> Unit,
-    sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
 ) {
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
     val density = androidx.compose.ui.platform.LocalDensity.current
@@ -563,21 +565,17 @@ private fun MeetingListItem(
                 }
                 .background(MaterialTheme.colorScheme.background)
         ) {
-            with(sharedTransitionScope) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .sharedBounds(
-                            rememberSharedContentState(key = "meeting-${meeting.id}"),
-                            animatedVisibilityScope = animatedVisibilityScope,
-                        )
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(MaterialTheme.colorScheme.surface)
-                        .clickable(onClick = onClick)
-                        .padding(horizontal = 16.dp, vertical = 14.dp)
-                ) {
-                    MeetingContentInner(meeting = meeting)
-                }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(MaterialTheme.colorScheme.surface)
+                    .clickable(onClick = onClick)
+                    .padding(horizontal = 16.dp, vertical = 14.dp)
+            ) {
+                MeetingContentInner(
+                    meeting = meeting,
+                )
             }
         }
     }
@@ -585,7 +583,7 @@ private fun MeetingListItem(
 
 @Composable
 private fun MeetingContentInner(
-    meeting: Meeting
+    meeting: Meeting,
 ) {
     val formatter = DateTimeFormatter.ofPattern("MMM d", Locale.getDefault())
     val dateStr = java.time.Instant
@@ -609,7 +607,7 @@ private fun MeetingContentInner(
                     fontSize = 15.sp
                 ),
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 text = "$dateStr · $durationStr",

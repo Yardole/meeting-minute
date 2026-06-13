@@ -14,9 +14,12 @@ class AudioRecorder @Inject constructor(
 ) {
     private var recorder: MediaRecorder? = null
     private var outputFile: File? = null
+    private var _session = 0L
+    val currentSession: Long get() = _session
 
     fun startRecording(): File {
-        stopRecording()
+        release()
+        _session++
 
         val timestamp = System.currentTimeMillis()
         outputFile = File(context.filesDir, "recordings/meeting_$timestamp.m4a").also {
@@ -41,14 +44,18 @@ class AudioRecorder @Inject constructor(
     }
 
     fun stopRecording() {
-        try {
-            recorder?.stop()
-            recorder?.release()
-        } catch (_: Exception) {
-            // ignore
-        } finally {
-            recorder = null
-        }
+        release()
+    }
+
+    fun stopIfSession(session: Long) {
+        if (session != _session) return
+        release()
+    }
+
+    private fun release() {
+        try { recorder?.stop() } catch (_: Exception) { }
+        try { recorder?.release() } catch (_: Exception) { }
+        recorder = null
     }
 
     fun getOutputFile(): File? = outputFile

@@ -2,6 +2,8 @@ package com.oliva.notes.app.ui.components
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.view.RoundedCorner
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -74,6 +76,19 @@ fun ShareSheet(
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
 
+    // Match the device display's top corner radius
+    val displayCornerRadius = remember {
+        val density = context.resources.displayMetrics.density
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            val display = context.display
+            val topLeftRadius = display?.getRoundedCorner(RoundedCorner.POSITION_TOP_LEFT)?.radius ?: 0
+            val topRightRadius = display?.getRoundedCorner(RoundedCorner.POSITION_TOP_RIGHT)?.radius ?: 0
+            (maxOf(topLeftRadius, topRightRadius) / density).toInt().coerceIn(20, 48).dp
+        } else {
+            20.dp
+        }
+    }
+
     var includeSummary by remember { mutableStateOf(summary != null) }
     var includeTranscript by remember { mutableStateOf(segments.isNotEmpty()) }
     var selectedFormat by remember { mutableStateOf(ShareFormat.PLAIN_TEXT) }
@@ -92,7 +107,7 @@ fun ShareSheet(
             onDismissRequest = onDismiss,
             sheetState = sheetState,
             containerColor = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
+            shape = RoundedCornerShape(topStart = displayCornerRadius, topEnd = displayCornerRadius),
             dragHandle = {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -114,7 +129,7 @@ fun ShareSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 24.dp)
-                    .padding(bottom = 32.dp)
+                    .padding(top = 12.dp, bottom = 32.dp)
             ) {
                 // Title
                 Text(
