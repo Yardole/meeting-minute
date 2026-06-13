@@ -91,6 +91,9 @@ class MeetingProcessingService : Service() {
                         transcribeAndSummarize(meetingId, meeting.audioUrl)
                     } else if (meeting.localAudioPath != null) {
                         fullPipeline(meetingId)
+                    } else {
+                        Log.e(TAG, "Cannot retry: no audio URL or local file for $meetingId")
+                        throw IllegalStateException("No audio available to retry processing")
                     }
                 }
                 else -> Log.d(TAG, "No processing needed for status ${meeting.status}")
