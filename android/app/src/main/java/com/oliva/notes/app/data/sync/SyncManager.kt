@@ -11,6 +11,7 @@ import com.oliva.notes.app.data.local.entity.SpeakerEntity
 import com.oliva.notes.app.data.local.entity.SummaryEntity
 import com.oliva.notes.app.data.local.entity.TranscriptSegmentEntity
 import com.oliva.notes.app.data.remote.SupabaseEdgeFunctionClient
+import androidx.room.withTransaction
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -125,60 +126,67 @@ class SyncManager @Inject constructor(
     }
 
     private suspend fun applyMergedData(tables: JSONObject) {
-        // Apply in dependency order: meetings → speakers → segments → summaries → chat_messages → profiles
+        database.withTransaction {
+            // Meetings — preserve localAudioPath (device-local, never serialized)
+            val meetingsJson = tables.optJSONArray("meetings")
+            if (meetingsJson != null) {
+                val localAudioPaths = database.meetingDao().getAllForSync()
+                    .associate { it.id to it.localAudioPath }
 
-        // Meetings
-        val meetingsJson = tables.optJSONArray("meetings")
-        if (meetingsJson != null) {
-            database.meetingDao().deleteAll()
-            database.meetingDao().insertAll(jsonToMeetings(meetingsJson))
-            Log.d(TAG, "Synced ${meetingsJson.length()} meetings")
-        }
+                val mergedMeetings = jsonToMeetings(meetingsJson).map { meeting ->
+                    meeting.copy(localAudioPath = meeting.localAudioPath ?: localAudioPaths[meeting.id])
+                }
 
-        // Speakers
-        val speakersJson = tables.optJSONArray("speakers")
-        if (speakersJson != null) {
-            database.speakerDao().deleteAll()
-            database.speakerDao().insertAll(jsonToSpeakers(speakersJson))
-            Log.d(TAG, "Synced ${speakersJson.length()} speakers")
-        }
-
-        // Transcript segments
-        val segmentsJson = tables.optJSONArray("transcript_segments")
-        if (segmentsJson != null) {
-            database.transcriptSegmentDao().deleteAll()
-            database.transcriptSegmentDao().insertAll(jsonToSegments(segmentsJson))
-            Log.d(TAG, "Synced ${segmentsJson.length()} transcript segments")
-        }
-
-        // Summaries
-        val summariesJson = tables.optJSONArray("summaries")
-        if (summariesJson != null) {
-            database.summaryDao().deleteAll()
-            val summaryEntities = jsonToSummaries(summariesJson)
-            for (entity in summaryEntities) {
-                database.summaryDao().insert(entity)
+                database.meetingDao().deleteAll()
+                database.meetingDao().insertAll(mergedMeetings)
+                Log.d(TAG, "Synced ${meetingsJson.length()} meetings")
             }
-            Log.d(TAG, "Synced ${summariesJson.length()} summaries")
-        }
 
-        // Chat messages
-        val messagesJson = tables.optJSONArray("chat_messages")
-        if (messagesJson != null) {
-            database.chatMessageDao().deleteAll()
-            database.chatMessageDao().insertAll(jsonToMessages(messagesJson))
-            Log.d(TAG, "Synced ${messagesJson.length()} chat messages")
-        }
-
-        // Profiles
-        val profilesJson = tables.optJSONArray("profiles")
-        if (profilesJson != null) {
-            database.profileDao().deleteAll()
-            val profileEntities = jsonToProfiles(profilesJson)
-            for (entity in profileEntities) {
-                database.profileDao().insert(entity)
+            // Speakers
+            val speakersJson = tables.optJSONArray("speakers")
+            if (speakersJson != null) {
+                database.speakerDao().deleteAll()
+                database.speakerDao().insertAll(jsonToSpeakers(speakersJson))
+                Log.d(TAG, "Synced ${speakersJson.length()} speakers")
             }
-            Log.d(TAG, "Synced ${profilesJson.length()} profiles")
+
+            // Transcript segments
+            val segmentsJson = tables.optJSONArray("transcript_segments")
+            if (segmentsJson != null) {
+                database.transcriptSegmentDao().deleteAll()
+                database.transcriptSegmentDao().insertAll(jsonToSegments(segmentsJson))
+                Log.d(TAG, "Synced ${segmentsJson.length()} transcript segments")
+            }
+
+            // Summaries
+            val summariesJson = tables.optJSONArray("summaries")
+            if (summariesJson != null) {
+                database.summaryDao().deleteAll()
+                val summaryEntities = jsonToSummaries(summariesJson)
+                for (entity in summaryEntities) {
+                    database.summaryDao().insert(entity)
+                }
+                Log.d(TAG, "Synced ${summariesJson.length()} summaries")
+            }
+
+            // Chat messages
+            val messagesJson = tables.optJSONArray("chat_messages")
+            if (messagesJson != null) {
+                database.chatMessageDao().deleteAll()
+                database.chatMessageDao().insertAll(jsonToMessages(messagesJson))
+                Log.d(TAG, "Synced ${messagesJson.length()} chat messages")
+            }
+
+            // Profiles
+            val profilesJson = tables.optJSONArray("profiles")
+            if (profilesJson != null) {
+                database.profileDao().deleteAll()
+                val profileEntities = jsonToProfiles(profilesJson)
+                for (entity in profileEntities) {
+                    database.profileDao().insert(entity)
+                }
+                Log.d(TAG, "Synced ${profilesJson.length()} profiles")
+            }
         }
     }
 
