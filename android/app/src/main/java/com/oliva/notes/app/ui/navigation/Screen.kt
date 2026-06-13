@@ -10,7 +10,7 @@ data object LoginRoute : NavKey
 data object HomeRoute : NavKey
 
 @Serializable
-data object RecordingRoute : NavKey
+data class RecordingRoute(val sessionId: Long = System.nanoTime()) : NavKey
 
 @Serializable
 data class MeetingDetailRoute(val meetingId: String) : NavKey

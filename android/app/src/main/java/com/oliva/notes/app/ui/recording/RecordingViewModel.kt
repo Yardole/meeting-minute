@@ -57,6 +57,20 @@ class RecordingViewModel @Inject constructor(
         _navigateToMeetingId.value = null
     }
 
+    fun resetForNewSession() {
+        _elapsedMs.value = 0L
+        _isRecording.value = false
+        _tooShort.value = false
+        _processingStatus.value = ""
+        _processingProgress.value = 0f
+        _isError.value = false
+        _isQueued.value = false
+        _navigateToMeetingId.value = null
+        currentMeetingId = null
+        timerJob?.cancel()
+        recordingJob?.cancel()
+    }
+
     /** Stop any in-progress recording without processing — used when the
      *  screen is left before the user explicitly stops. */
     fun cancelRecording() {

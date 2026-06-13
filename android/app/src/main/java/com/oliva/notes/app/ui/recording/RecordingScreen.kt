@@ -70,6 +70,11 @@ fun RecordingScreen(
     val tooShort by viewModel.tooShort.collectAsState()
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
 
+    // Reset stale state from any previous session (ViewModel is Activity-scoped)
+    LaunchedEffect(Unit) {
+        viewModel.resetForNewSession()
+    }
+
     // Cancel recording if the user leaves this screen without manually stopping
     androidx.compose.runtime.DisposableEffect(Unit) {
         onDispose { viewModel.cancelRecording() }
