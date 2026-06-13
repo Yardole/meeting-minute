@@ -452,9 +452,30 @@ private fun MinutesTab(
             val showRetrying = isRetrying || status.startsWith("SUMMARIZING") ||
                 status == "TRANSCRIBED" || status.startsWith("TRANSCRIBI") ||
                 status == "UPLOADED"
+
+            val retryMessages = remember {
+                listOf(
+                    "Connecting…" to "Reaching out to the server…",
+                    "Hang tight…" to "Setting things up for you…",
+                    "Almost there…" to "Preparing to reprocess your meeting…",
+                    "Still on it…" to "This might take a moment…",
+                )
+            }
+            var retryMessageIndex by remember { mutableIntStateOf(0) }
+            LaunchedEffect(isRetrying) {
+                if (isRetrying) {
+                    retryMessageIndex = 0
+                    while (true) {
+                        delay(2500)
+                        retryMessageIndex = (retryMessageIndex + 1) % retryMessages.size
+                    }
+                }
+            }
+
+            val retryingInError = isRetrying && status == "ERROR"
             Text(
                 text = when {
-                    isRetrying && status == "ERROR" -> "Retrying…"
+                    retryingInError -> retryMessages[retryMessageIndex].first
                     status.startsWith("SUMMARIZING") -> "Generating summary"
                     status == "TRANSCRIBED" || status.startsWith("TRANSCRIBI") -> "Summary pending"
                     status == "UPLOADED" -> "Processing…"
@@ -470,7 +491,7 @@ private fun MinutesTab(
             )
             Text(
                 text = when {
-                    isRetrying && status == "ERROR" -> "Reprocessing your meeting…"
+                    retryingInError -> retryMessages[retryMessageIndex].second
                     status.startsWith("SUMMARIZING") -> "Oliva is generating a summary of this meeting."
                     status == "TRANSCRIBED" || status.startsWith("TRANSCRIBI") -> "Transcript is ready. Summary will be generated next."
                     status == "UPLOADED" -> "Audio uploaded. Starting transcription…"
@@ -492,12 +513,16 @@ private fun MinutesTab(
                 )
             }
             if (status == "ERROR" && !isRetrying) {
+                val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
                 Box(
                     modifier = Modifier
                         .padding(top = 16.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(com.oliva.notes.app.ui.theme.WarmOlive)
-                        .clickable { onRetry() }
+                        .clickable {
+                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                            onRetry()
+                        }
                         .padding(horizontal = 24.dp, vertical = 12.dp)
                 ) {
                     Text(
