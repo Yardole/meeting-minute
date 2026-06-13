@@ -1,6 +1,7 @@
 package com.oliva.notes.app.ui.recording
 
 import android.Manifest
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -70,10 +71,30 @@ fun RecordingScreen(
     val navigateToMeetingId by viewModel.navigateToMeetingId.collectAsState()
     val tooShort by viewModel.tooShort.collectAsState()
     val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     // Reset stale state from any previous session (ViewModel is Activity-scoped)
     LaunchedEffect(Unit) {
         viewModel.resetForNewSession()
+    }
+
+    // Back gesture: stop + process (while recording) or go home (while processing)
+    BackHandler(enabled = isRecording || processingStatus.isNotEmpty()) {
+        if (isRecording) {
+            if (elapsedMs < 10_000) {
+                viewModel.cancelRecording()
+                android.widget.Toast.makeText(
+                    context,
+                    "Recording too short — at least 10 seconds needed",
+                    android.widget.Toast.LENGTH_SHORT
+                ).show()
+                onNavigateHome()
+            } else {
+                viewModel.stopRecording()
+            }
+        } else {
+            onNavigateHome()
+        }
     }
 
     // Cancel recording if the user leaves this screen without manually stopping
@@ -112,7 +133,6 @@ fun RecordingScreen(
     }
 
     // Show toast for too-short recordings and go back
-    val context = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(tooShort) {
         if (tooShort) {
             android.widget.Toast.makeText(
