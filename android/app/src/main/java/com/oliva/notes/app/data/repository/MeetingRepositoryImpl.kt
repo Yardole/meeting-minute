@@ -231,6 +231,9 @@ class MeetingRepositoryImpl @Inject constructor(
 
         database.meetingDao().update(entity.copy(status = MeetingStatus.TRANSCRIBING, updatedAt = Instant.now()))
 
+        database.speakerDao().hardDeleteByMeetingId(meetingId)
+        database.transcriptSegmentDao().hardDeleteByMeetingId(meetingId)
+
         val payload = JSONObject().apply {
             put("audioUrl", audioUrl)
             put("meetingId", meetingId.toString())
@@ -306,6 +309,8 @@ class MeetingRepositoryImpl @Inject constructor(
             ?: return Result.failure(IllegalStateException("Meeting not found"))
 
         database.meetingDao().update(entity.copy(status = MeetingStatus.SUMMARIZING, updatedAt = Instant.now()))
+
+        database.summaryDao().hardDeleteByMeetingId(meetingId)
 
         val payload = JSONObject().apply {
             put("transcript", transcriptText)

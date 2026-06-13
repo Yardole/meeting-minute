@@ -31,6 +31,9 @@ interface TranscriptSegmentDao {
     @Query("SELECT * FROM transcript_segments")
     suspend fun getAllForSync(): List<TranscriptSegmentEntity>
 
+    @Query("DELETE FROM transcript_segments WHERE meetingId = :meetingId")
+    suspend fun hardDeleteByMeetingId(meetingId: UUID)
+
     @Query("DELETE FROM transcript_segments")
     suspend fun deleteAll()
 

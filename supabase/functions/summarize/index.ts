@@ -129,7 +129,7 @@ You must respond with a JSON object in this exact format:
     // Send push notification
     const { data: meeting } = await supabase.from('meetings').select('user_id').eq('id', meetingId).single()
     if (meeting?.user_id) {
-      sendPush(supabase, meeting.user_id, {
+      await sendPush(supabase, meeting.user_id, {
         title: 'Meeting ready',
         body: `"${title}" is ready to view.`,
         meetingId,

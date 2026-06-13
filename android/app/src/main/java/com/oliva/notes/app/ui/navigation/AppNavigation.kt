@@ -1,6 +1,10 @@
 package com.oliva.notes.app.ui.navigation
 
+import android.Manifest
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ContentTransform
@@ -63,10 +67,17 @@ fun AppNavigation(
     val authState by authViewModel.state.collectAsState()
     var currentScreen by remember { mutableStateOf<Any>(LoginRoute) }
 
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* result handled by the OS */ }
+
     // Navigate to home when logged in
     LaunchedEffect(authState.isLoggedIn) {
         if (authState.isLoggedIn && currentScreen !is HomeRoute) {
             currentScreen = HomeRoute
+        }
+        if (authState.isLoggedIn && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
 

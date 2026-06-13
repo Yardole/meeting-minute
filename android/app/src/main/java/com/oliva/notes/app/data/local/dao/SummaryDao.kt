@@ -35,6 +35,9 @@ interface SummaryDao {
     @Query("SELECT * FROM summaries")
     suspend fun getAllForSync(): List<SummaryEntity>
 
+    @Query("DELETE FROM summaries WHERE meetingId = :meetingId")
+    suspend fun hardDeleteByMeetingId(meetingId: UUID)
+
     @Query("DELETE FROM summaries")
     suspend fun deleteAll()
 
