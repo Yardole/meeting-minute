@@ -25,6 +25,9 @@ class OlivaFirebaseMessagingService : FirebaseMessagingService() {
     @Inject
     lateinit var database: MeetingMinuteDatabase
 
+    @Inject
+    lateinit var authClient: com.oliva.notes.app.data.remote.SupabaseAuthClient
+
     companion object {
         private const val TAG = "OlivaFCM"
         const val CHANNEL_ID = "oliva_meeting_updates"
@@ -86,8 +89,12 @@ class OlivaFirebaseMessagingService : FirebaseMessagingService() {
 
     private fun storeToken(token: String) {
         try {
+            val userIdStr = authClient.userId ?: run {
+                Log.w(TAG, "Cannot store FCM token — no logged-in user")
+                return
+            }
+            val profileId = UUID.fromString(userIdStr)
             runBlocking(Dispatchers.IO) {
-                val profileId = UUID.fromString("00000000-0000-0000-0000-000000000001")
                 val existing = database.profileDao().getById(profileId)
                 val profile = (existing ?: ProfileEntity(id = profileId)).copy(
                     fcmToken = token,
