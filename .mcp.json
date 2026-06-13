@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "android-mcp": {
+      "command": "uvx",
+      "args": [
+        "--python",
+        "3.13",
+        "android-mcp"
+      ]
+    }
+  }
+}

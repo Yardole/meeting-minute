@@ -45,6 +45,7 @@ class RecordingViewModel @Inject constructor(
     val isQueued: StateFlow<Boolean> = _isQueued
 
     private var currentMeetingId: UUID? = null
+    private var recordingSession = -1L
 
     private val _navigateToMeetingId = MutableStateFlow<String?>(null)
     val navigateToMeetingId: StateFlow<String?> = _navigateToMeetingId
@@ -63,7 +64,7 @@ class RecordingViewModel @Inject constructor(
         _isRecording.value = false
         timerJob?.cancel()
         _elapsedMs.value = 0L
-        audioRecorder.stopRecording()
+        audioRecorder.stopIfSession(recordingSession)
     }
 
     fun startRecording() {
@@ -72,6 +73,7 @@ class RecordingViewModel @Inject constructor(
         _elapsedMs.value = 0L
 
         audioRecorder.startRecording()
+        recordingSession = audioRecorder.currentSession
 
         timerJob = viewModelScope.launch {
             val startTime = System.currentTimeMillis()
