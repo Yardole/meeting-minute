@@ -36,7 +36,7 @@ class SyncManager @Inject constructor(
             Log.d(TAG, "Starting full sync for user $userId")
 
             // 1. Collect all local data
-            val localData = collectLocalData()
+            val localData = collectLocalData(userId)
 
             // 2. Build sync payload
             val payload = JSONObject().apply {
@@ -72,7 +72,7 @@ class SyncManager @Inject constructor(
         throw lastError ?: Exception("Sync failed after $MAX_RETRIES attempts")
     }
 
-    private suspend fun collectLocalData(): JSONObject {
+    private suspend fun collectLocalData(userId: UUID): JSONObject {
         val tables = JSONObject()
 
         // Meetings
@@ -95,8 +95,8 @@ class SyncManager @Inject constructor(
         val messages = database.chatMessageDao().getAllForSync()
         tables.put("chat_messages", messagesToJson(messages))
 
-        // Profiles
-        val profiles = database.profileDao().getAllForSync()
+        // Profiles — only sync the current user's profile
+        val profiles = database.profileDao().getAllForSync().filter { it.id == userId }
         tables.put("profiles", profilesToJson(profiles))
 
         return tables
@@ -171,10 +171,9 @@ class SyncManager @Inject constructor(
                 put("title", m.title)
                 put("durationMs", m.durationMs)
                 put("recordedAt", m.recordedAt.toString())
-                put("localAudioPath", m.localAudioPath ?: JSONObject.NULL)
                 put("audioUrl", m.audioUrl ?: JSONObject.NULL)
                 put("audioBucketPath", m.audioBucketPath ?: JSONObject.NULL)
-                put("status", m.status.name)
+                put("status", m.status.name.lowercase())
                 put("language", m.language)
                 put("createdAt", m.createdAt.toString())
                 put("updatedAt", m.updatedAt.toString())
@@ -227,7 +226,7 @@ class SyncManager @Inject constructor(
                 put("id", s.id.toString())
                 put("meetingId", s.meetingId.toString())
                 put("content", s.content)
-                put("keyPoints", s.keyPoints)
+                put("keyPoints", JSONArray(s.keyPoints))
                 put("generatedAt", s.generatedAt.toString())
                 put("createdAt", s.createdAt.toString())
                 put("updatedAt", s.updatedAt.toString())
@@ -262,7 +261,6 @@ class SyncManager @Inject constructor(
                 put("avatarUrl", p.avatarUrl ?: JSONObject.NULL)
                 put("createdAt", p.createdAt.toString())
                 put("updatedAt", p.updatedAt.toString())
-                put("deletedAt", p.deletedAt?.toString() ?: JSONObject.NULL)
                 put("fcmToken", p.fcmToken ?: JSONObject.NULL)
             })
         }
@@ -284,7 +282,7 @@ class SyncManager @Inject constructor(
                 localAudioPath = o.optString("localAudioPath", null).takeIf { it != "null" },
                 audioUrl = o.optString("audioUrl", null).takeIf { it != "null" },
                 audioBucketPath = o.optString("audioBucketPath", null).takeIf { it != "null" },
-                status = try { MeetingStatus.valueOf(o.optString("status", "RECORDED")) } catch (_: Exception) { MeetingStatus.RECORDED },
+                status = try { MeetingStatus.valueOf(o.optString("status", "RECORDED").uppercase()) } catch (_: Exception) { MeetingStatus.RECORDED },
                 language = o.optString("language", "en"),
                 createdAt = parseInstant(o.optString("createdAt", null)),
                 updatedAt = parseInstant(o.optString("updatedAt", null)),
