@@ -216,6 +216,7 @@ fun HomeScreen(
                                         sharedContentState = rememberSharedContentState(key = "recording-button"),
                                         animatedVisibilityScope = animatedVisibilityScope,
                                         resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
+                                        clipInOverlayDuringTransition = OverlayClip(CircleShape),
                                     )
                                     .clip(CircleShape)
                                     .background(MaterialTheme.colorScheme.error)

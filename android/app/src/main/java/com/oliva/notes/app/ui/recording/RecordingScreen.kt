@@ -452,6 +452,7 @@ private fun RecordingActiveScreen(
                             .sharedBounds(
                                 sharedContentState = rememberSharedContentState(key = "recording-button"),
                                 animatedVisibilityScope = animatedVisibilityScope,
+                                clipInOverlayDuringTransition = OverlayClip(CircleShape),
                             )
                             .scale(pulseScale)
                             .clip(CircleShape)
