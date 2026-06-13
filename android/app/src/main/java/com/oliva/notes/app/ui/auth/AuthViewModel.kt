@@ -2,6 +2,7 @@ package com.oliva.notes.app.ui.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.oliva.notes.app.data.push.FcmTokenManager
 import com.oliva.notes.app.data.remote.SupabaseAuthClient
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +21,7 @@ data class AuthState(
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val authClient: SupabaseAuthClient,
+    private val fcmTokenManager: FcmTokenManager,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AuthState())
@@ -28,6 +30,7 @@ class AuthViewModel @Inject constructor(
     init {
         if (authClient.isLoggedIn) {
             _state.value = AuthState(isLoggedIn = true, userId = authClient.userId)
+            viewModelScope.launch { fcmTokenManager.requestAndStoreToken() }
         }
     }
 
@@ -37,6 +40,7 @@ class AuthViewModel @Inject constructor(
             authClient.login(email, password)
                 .onSuccess { session ->
                     _state.value = AuthState(isLoggedIn = true, userId = session.userId)
+                    fcmTokenManager.requestAndStoreToken()
                 }
                 .onFailure { e ->
                     _state.value = _state.value.copy(isLoading = false, error = e.message ?: "Login failed")
@@ -50,6 +54,7 @@ class AuthViewModel @Inject constructor(
             authClient.signup(email, password)
                 .onSuccess { session ->
                     _state.value = AuthState(isLoggedIn = true, userId = session.userId)
+                    fcmTokenManager.requestAndStoreToken()
                 }
                 .onFailure { e ->
                     val msg = e.message ?: "Signup failed"

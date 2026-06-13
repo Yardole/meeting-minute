@@ -29,6 +29,9 @@ interface SpeakerDao {
     @Query("SELECT * FROM speakers")
     suspend fun getAllForSync(): List<SpeakerEntity>
 
+    @Query("DELETE FROM speakers WHERE meetingId = :meetingId")
+    suspend fun hardDeleteByMeetingId(meetingId: UUID)
+
     @Query("DELETE FROM speakers")
     suspend fun deleteAll()
 

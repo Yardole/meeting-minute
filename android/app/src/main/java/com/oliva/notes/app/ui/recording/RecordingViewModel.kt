@@ -106,13 +106,7 @@ class RecordingViewModel @Inject constructor(
         audioRecorder.stopRecording()
         val file = audioRecorder.getOutputFile()
 
-        // Gate: recordings under 10s are too short to process
-        val durationMs = _elapsedMs.value
-        if (durationMs < 10_000) {
-            _tooShort.value = true
-            return
-        }
-
+        // TODO: restore 10s minimum gate before release
         if (file != null) {
             val startedOffline = !connectivityObserver.isOnline.value
             val meeting = meetingRepository.processRecording(file.absolutePath)

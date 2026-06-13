@@ -31,6 +31,28 @@ class SyncManager @Inject constructor(
         private const val BASE_DELAY_MS = 1000L
     }
 
+    suspend fun ensureMeetingExistsRemotely(meeting: MeetingEntity): Result<Unit> = withContext(Dispatchers.IO) {
+        runCatching {
+            Log.d(TAG, "Ensuring meeting ${meeting.id} exists in Supabase")
+            val payload = JSONObject().apply {
+                put("userId", meeting.userId.toString())
+                put("tables", JSONObject().apply {
+                    put("meetings", meetingsToJson(listOf(meeting)))
+                    put("speakers", JSONArray())
+                    put("transcript_segments", JSONArray())
+                    put("summaries", JSONArray())
+                    put("chat_messages", JSONArray())
+                    put("profiles", JSONArray())
+                })
+            }
+            callSyncWithRetry(payload)
+            Log.d(TAG, "Meeting ${meeting.id} synced to Supabase")
+            Unit
+        }.onFailure { e ->
+            Log.e(TAG, "Failed to sync meeting ${meeting.id} remotely", e)
+        }
+    }
+
     suspend fun syncAll(userId: UUID): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             Log.d(TAG, "Starting full sync for user $userId")

@@ -144,7 +144,7 @@ serve(async (req) => {
     // Send push notification
     const { data: meeting } = await supabase.from('meetings').select('user_id').eq('id', meetingId).single()
     if (meeting?.user_id) {
-      sendPush(supabase, meeting.user_id, {
+      await sendPush(supabase, meeting.user_id, {
         title: 'Transcription ready',
         body: 'Your meeting transcript is ready to view.',
         meetingId,

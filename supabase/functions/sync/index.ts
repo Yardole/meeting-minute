@@ -49,9 +49,14 @@ function convertRowToCamel(row: Record<string, unknown>): Record<string, unknown
 async function syncTable(
   supabase: ReturnType<typeof createClient>,
   tableName: string,
-  localRows: SyncRow[],
+  rawLocalRows: SyncRow[],
   userId: string
 ): Promise<SyncRow[]> {
+  // Normalize local rows to snake_case (Android sends camelCase)
+  const localRows: SyncRow[] = rawLocalRows.map(row =>
+    convertRowToSnake(row as unknown as Record<string, unknown>) as unknown as SyncRow
+  )
+
   // Query remote rows for this user's data
   const { data: remoteRows, error } = await supabase
     .from(tableName)
@@ -60,8 +65,7 @@ async function syncTable(
 
   if (error) {
     console.error(`Error fetching ${tableName}:`, error)
-    // Return local data as-is if we can't fetch remote
-    return localRows
+    return rawLocalRows
   }
 
   const remoteMap = new Map<string, SyncRow>()
@@ -85,18 +89,16 @@ async function syncTable(
 
     if (local && !remote) {
       // Only local exists → push to remote
-      const snakeRow = convertRowToSnake(local as unknown as Record<string, unknown>)
       const { error: upsertErr } = await supabase
         .from(tableName)
-        .upsert(snakeRow, { onConflict: 'id' })
+        .upsert(local, { onConflict: 'id' })
       if (upsertErr) {
         console.error(`Failed to push ${tableName}/${id}:`, upsertErr)
       }
       mergedMap.set(id, local)
     } else if (!local && remote) {
       // Only remote exists → pull to local
-      const camelRow = convertRowToCamel(remote as unknown as Record<string, unknown>)
-      mergedMap.set(id, camelRow as unknown as SyncRow)
+      mergedMap.set(id, remote as SyncRow)
     } else if (local && remote) {
       // Both exist → compare updated_at
       const localTime = new Date(local.updated_at).getTime()
@@ -112,22 +114,19 @@ async function syncTable(
         mergedMap.set(id, local)
       } else if (remote.deleted_at && !local.deleted_at) {
         // Remote deleted → pull
-        const camelRow = convertRowToCamel(remote as unknown as Record<string, unknown>)
-        mergedMap.set(id, camelRow as unknown as SyncRow)
+        mergedMap.set(id, remote as SyncRow)
       } else if (localTime > remoteTime) {
         // Local newer → push to remote
-        const snakeRow = convertRowToSnake(local as unknown as Record<string, unknown>)
         const { error: upsertErr } = await supabase
           .from(tableName)
-          .upsert(snakeRow, { onConflict: 'id' })
+          .upsert(local, { onConflict: 'id' })
         if (upsertErr) {
           console.error(`Failed to push newer ${tableName}/${id}:`, upsertErr)
         }
         mergedMap.set(id, local)
       } else if (remoteTime > localTime) {
         // Remote newer → pull
-        const camelRow = convertRowToCamel(remote as unknown as Record<string, unknown>)
-        mergedMap.set(id, camelRow as unknown as SyncRow)
+        mergedMap.set(id, remote as SyncRow)
       } else {
         // Equal → skip (local wins tie)
         mergedMap.set(id, local)
@@ -135,7 +134,10 @@ async function syncTable(
     }
   }
 
-  return Array.from(mergedMap.values())
+  // Return merged results in camelCase for the Android client
+  return Array.from(mergedMap.values()).map(row =>
+    convertRowToCamel(row as unknown as Record<string, unknown>) as unknown as SyncRow
+  )
 }
 
 serve(async (req) => {
