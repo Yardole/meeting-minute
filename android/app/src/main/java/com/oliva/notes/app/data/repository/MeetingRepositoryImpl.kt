@@ -1,8 +1,11 @@
 package com.oliva.notes.app.data.repository
 
+import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.util.Log
 import com.oliva.notes.app.data.connectivity.ConnectivityObserver
+import com.oliva.notes.app.data.processing.MeetingProcessingService
+import dagger.hilt.android.qualifiers.ApplicationContext
 import com.oliva.notes.app.data.local.MeetingMinuteDatabase
 import com.oliva.notes.app.data.local.entity.ChatMessageEntity
 import com.oliva.notes.app.data.local.entity.ChatRole
@@ -43,6 +46,7 @@ class MeetingRepositoryImpl @Inject constructor(
     private val edgeFunctionClient: SupabaseEdgeFunctionClient,
     private val connectivityObserver: ConnectivityObserver,
     private val authClient: SupabaseAuthClient,
+    @ApplicationContext private val context: Context,
 ) : MeetingRepository {
 
     // Scope that outlives any individual ViewModel for background processing
@@ -119,7 +123,6 @@ class MeetingRepositoryImpl @Inject constructor(
     }
 
     override fun processRecording(localAudioPath: String): Meeting {
-        // Quick Room insert on IO — returns immediately
         val meeting = runBlocking(Dispatchers.IO) {
             createMeeting(
                 title = "Meeting ${System.currentTimeMillis()}",
@@ -127,45 +130,12 @@ class MeetingRepositoryImpl @Inject constructor(
             )
         }
 
-        // Gate: if offline, leave at RECORDED — queue drains when connectivity returns
         if (!connectivityObserver.isOnline.value) {
             Log.d("MeetingRepo", "Offline — meeting ${meeting.id} queued for later processing")
             return meeting
         }
 
-        // Run the pipeline in a scope that survives navigation
-        processingScope.launch {
-            Log.d("MeetingRepo", "Starting pipeline for meeting ${meeting.id}")
-
-            uploadAudio(meeting.id)
-                .onSuccess { audioUrl ->
-                    Log.d("MeetingRepo", "Upload done, starting transcribe")
-                    transcribeMeeting(meeting.id, audioUrl)
-                        .onSuccess {
-                            Log.d("MeetingRepo", "Transcribe done, starting summarize")
-                            val transcriptText = getTranscriptText(meeting.id)
-                            if (transcriptText.isNotBlank()) {
-                                summarizeMeeting(meeting.id, transcriptText)
-                                    .onSuccess { Log.d("MeetingRepo", "Summarize done") }
-                                    .onFailure {
-                                        Log.e("MeetingRepo", "Summarize failed", it)
-                                        setMeetingError(meeting.id)
-                                    }
-                            } else {
-                                Log.d("MeetingRepo", "No transcript text, skipping summarize")
-                            }
-                        }
-                        .onFailure {
-                            Log.e("MeetingRepo", "Transcribe failed", it)
-                            setMeetingError(meeting.id)
-                        }
-                }
-                .onFailure {
-                    Log.e("MeetingRepo", "Upload failed", it)
-                    setMeetingError(meeting.id)
-                }
-        }
-
+        MeetingProcessingService.start(context, meeting.id)
         return meeting
     }
 
@@ -524,106 +494,16 @@ class MeetingRepositoryImpl @Inject constructor(
             if (pending.isEmpty()) return@launch
             Log.d("MeetingRepo", "Processing ${pending.size} pending meetings")
             for (meeting in pending) {
-                // Re-check connectivity before each meeting
                 if (!connectivityObserver.isOnline.value) {
                     Log.d("MeetingRepo", "Went offline — stopping queue drain")
                     break
                 }
-                retryProcessing(meeting.id)
+                MeetingProcessingService.start(context, meeting.id)
             }
         }
     }
 
     override suspend fun retryProcessing(meetingId: UUID) {
-        val meeting = database.meetingDao().getById(meetingId) ?: return
-        processingScope.launch {
-            Log.d("MeetingRepo", "Retrying pipeline for meeting $meetingId from status ${meeting.status}")
-            when (meeting.status) {
-                MeetingStatus.RECORDED -> {
-                    // Upload never ran or failed
-                    if (meeting.localAudioPath != null) {
-                        uploadAudio(meetingId)
-                            .onSuccess { audioUrl ->
-                                transcribeMeeting(meetingId, audioUrl)
-                                    .onSuccess {
-                                        val text = buildTranscriptText(meetingId)
-                                        if (text.isNotBlank()) summarizeMeeting(meetingId, text)
-                                    }
-                                    .onFailure { setMeetingError(meetingId) }
-                            }
-                            .onFailure { setMeetingError(meetingId) }
-                    }
-                }
-                MeetingStatus.UPLOADED, MeetingStatus.TRANSCRIBED -> {
-                    // Transcribe never ran or failed
-                    val audioUrl = meeting.audioUrl
-                    if (audioUrl != null) {
-                        transcribeMeeting(meetingId, audioUrl)
-                            .onSuccess {
-                                val text = buildTranscriptText(meetingId)
-                                if (text.isNotBlank()) summarizeMeeting(meetingId, text)
-                            }
-                            .onFailure { setMeetingError(meetingId) }
-                    }
-                }
-                MeetingStatus.ERROR -> {
-                    // Try to resume from the most logical point
-                    if (meeting.audioUrl != null) {
-                        transcribeMeeting(meetingId, meeting.audioUrl)
-                            .onSuccess {
-                                val text = buildTranscriptText(meetingId)
-                                if (text.isNotBlank()) summarizeMeeting(meetingId, text)
-                            }
-                            .onFailure { setMeetingError(meetingId) }
-                    } else if (meeting.localAudioPath != null) {
-                        uploadAudio(meetingId)
-                            .onSuccess { audioUrl ->
-                                transcribeMeeting(meetingId, audioUrl)
-                                    .onSuccess {
-                                        val text = buildTranscriptText(meetingId)
-                                        if (text.isNotBlank()) summarizeMeeting(meetingId, text)
-                                    }
-                                    .onFailure { setMeetingError(meetingId) }
-                            }
-                            .onFailure { setMeetingError(meetingId) }
-                    }
-                }
-                MeetingStatus.TRANSCRIBING -> {
-                    // App was killed mid-transcribe — retry from transcribe
-                    meeting.audioUrl?.let { audioUrl ->
-                        transcribeMeeting(meetingId, audioUrl)
-                            .onSuccess {
-                                val text = buildTranscriptText(meetingId)
-                                if (text.isNotBlank()) summarizeMeeting(meetingId, text)
-                            }
-                            .onFailure { setMeetingError(meetingId) }
-                    } ?: run {
-                        // No audioUrl — upload must have succeeded but transcribe started;
-                        // fall back to uploading again
-                        meeting.localAudioPath?.let {
-                            uploadAudio(meetingId)
-                                .onSuccess { audioUrl ->
-                                    transcribeMeeting(meetingId, audioUrl)
-                                        .onSuccess {
-                                            val text = buildTranscriptText(meetingId)
-                                            if (text.isNotBlank()) summarizeMeeting(meetingId, text)
-                                        }
-                                        .onFailure { setMeetingError(meetingId) }
-                                }
-                                .onFailure { setMeetingError(meetingId) }
-                        }
-                    }
-                }
-                MeetingStatus.SUMMARIZING -> {
-                    // App was killed mid-summarize — retry from summarize
-                    val text = buildTranscriptText(meetingId)
-                    if (text.isNotBlank()) {
-                        summarizeMeeting(meetingId, text)
-                            .onFailure { setMeetingError(meetingId) }
-                    }
-                }
-                else -> Log.d("MeetingRepo", "No retry needed for status ${meeting.status}")
-            }
-        }
+        MeetingProcessingService.start(context, meetingId)
     }
 }
