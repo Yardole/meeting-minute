@@ -1,6 +1,7 @@
 package com.oliva.notes.app.ui.recording
 
 import android.Manifest
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -74,6 +75,15 @@ fun RecordingScreen(
     // Reset stale state from any previous session (ViewModel is Activity-scoped)
     LaunchedEffect(Unit) {
         viewModel.resetForNewSession()
+    }
+
+    // Back gesture: stop + process (while recording) or go home (while processing)
+    BackHandler(enabled = isRecording || processingStatus.isNotEmpty()) {
+        if (isRecording) {
+            viewModel.stopRecording()
+        } else {
+            onNavigateHome()
+        }
     }
 
     // Cancel recording if the user leaves this screen without manually stopping
