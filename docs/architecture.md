@@ -155,6 +155,16 @@ No `sync_status` or `last_sync_at` column. Conflict resolution is a direct compa
 
 **Retry:** Sync worker retries on failure. On next run, the same `updated_at` comparison runs again.
 
+### Local-only fields
+
+Some fields exist only on the device and are never serialized to the server. Currently this is just `local_audio_path` on `meetings` — it holds the absolute file path to the recorded audio on that specific device.
+
+`applyMergedData()` runs inside a single Room transaction. This guarantees two things:
+
+1. **Local-only fields survive sync.** Before deleting rows, existing `local_audio_path` values are snapshotted by ID. After inserting the merged data (which has `local_audio_path = null`), the snapshot is patched back in. Any new local-only field should follow the same pattern.
+
+2. **No empty-state flash.** Without the transaction, `deleteAll()` triggers a Flow emission of an empty list before `insertAll()` repopulates it. The transaction batches both operations so observers only see the final state.
+
 ---
 
 ## Supabase Edge Functions
@@ -214,6 +224,7 @@ API keys (Assembly AI, DeepSeek) live in Edge Function secrets. Never client-sid
 | 2026-06-06 | Auto speaker labels + manual rename | Assembly AI gives "Speaker A"; user maps to real names after |
 | 2026-06-06 | `profiles` table in public schema | Mirrors `auth.users` for `display_name`, `avatar_url`; `auth.users` is auto-generated |
 | 2026-06-11 | FCM via service account, key in env var | Service account JSON stored as `FCM_SERVICE_ACCOUNT_JSON` Supabase secret; never in repo |
+| 2026-06-13 | Sync uses Room transaction + local-field snapshot | `deleteAll+insertAll` without a transaction wiped `localAudioPath` and flashed empty UI; wrapping in `withTransaction` and snapshotting local-only fields fixes both |
 
 ---
 

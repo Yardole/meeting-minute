@@ -130,11 +130,15 @@ class SyncManager @Inject constructor(
             // Meetings — preserve localAudioPath (device-local, never serialized)
             val meetingsJson = tables.optJSONArray("meetings")
             if (meetingsJson != null) {
-                val localAudioPaths = database.meetingDao().getAllForSync()
-                    .associate { it.id to it.localAudioPath }
+                val localMeetings = database.meetingDao().getAllForSync()
+                    .associateBy { it.id }
 
                 val mergedMeetings = jsonToMeetings(meetingsJson).map { meeting ->
-                    meeting.copy(localAudioPath = meeting.localAudioPath ?: localAudioPaths[meeting.id])
+                    val local = localMeetings[meeting.id]
+                    meeting.copy(
+                        localAudioPath = meeting.localAudioPath ?: local?.localAudioPath,
+                        status = if (local != null && local.status.progression > meeting.status.progression) local.status else meeting.status
+                    )
                 }
 
                 database.meetingDao().deleteAll()
