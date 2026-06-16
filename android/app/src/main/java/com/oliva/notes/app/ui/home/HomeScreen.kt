@@ -94,7 +94,7 @@ import java.util.Locale
 @Composable
 fun HomeScreen(
     sharedTransitionScope: SharedTransitionScope,
-    animatedVisibilityScope: AnimatedVisibilityScope,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
     onMeetingClick: (String) -> Unit,
     onRecordClick: () -> Unit,
     onSettingsClick: () -> Unit,
@@ -219,11 +219,17 @@ fun HomeScreen(
                             Box(
                                 modifier = Modifier
                                     .size(56.dp)
-                                    .sharedBounds(
-                                        sharedContentState = rememberSharedContentState(key = "recording-button"),
-                                        animatedVisibilityScope = animatedVisibilityScope,
-                                        resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
-                                        clipInOverlayDuringTransition = OverlayClip(CircleShape),
+                                    .then(
+                                        if (animatedVisibilityScope != null) {
+                                            Modifier.sharedBounds(
+                                                sharedContentState = rememberSharedContentState(key = "recording-button"),
+                                                animatedVisibilityScope = animatedVisibilityScope,
+                                                resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
+                                                clipInOverlayDuringTransition = OverlayClip(CircleShape),
+                                            )
+                                        } else {
+                                            Modifier
+                                        }
                                     )
                                     .shadow(6.dp, CircleShape)
                                     .clip(CircleShape)

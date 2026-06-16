@@ -3,14 +3,16 @@ package com.oliva.notes.app.ui.navigation
 import android.Manifest
 import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedContentTransitionScope
+
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -34,8 +36,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CancellationException
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.oliva.notes.app.ui.auth.AuthViewModel
 import com.oliva.notes.app.ui.auth.LoginScreen
@@ -49,14 +55,16 @@ private val fastFade = fadeIn(tween(300)) togetherWith fadeOut(tween(300))
 
 private fun slideOverForward(): ContentTransform = ContentTransform(
     targetContentEnter = slideInHorizontally(tween<IntOffset>(400)) { it },
-    initialContentExit = ExitTransition.None,
+    initialContentExit = fadeOut(tween(400), targetAlpha = 0.99f),
     targetContentZIndex = 1f,
+    sizeTransform = SizeTransform(clip = false),
 )
 
 private fun slideOverBack(): ContentTransform = ContentTransform(
     targetContentEnter = EnterTransition.None,
     initialContentExit = slideOutHorizontally(tween<IntOffset>(400)) { it },
     targetContentZIndex = -1f,
+    sizeTransform = SizeTransform(clip = false),
 )
 
 @OptIn(ExperimentalSharedTransitionApi::class)
@@ -82,13 +90,44 @@ fun AppNavigation(
         }
     }
 
-    // System back: return to home from detail, recording, or settings
-    BackHandler(currentScreen is MeetingDetailRoute || currentScreen is RecordingRoute || currentScreen is SettingsRoute) {
+    var backProgress by remember { mutableStateOf(0f) }
+
+    // Predictive back for slide-over screens (detail, settings)
+    PredictiveBackHandler(
+        enabled = currentScreen is MeetingDetailRoute || currentScreen is SettingsRoute,
+    ) { progress ->
+        try {
+            progress.collect { backEvent ->
+                backProgress = backEvent.progress
+            }
+            backProgress = 0f
+            currentScreen = HomeRoute
+        } catch (e: CancellationException) {
+            backProgress = 0f
+            throw e
+        }
+    }
+
+    // Regular back for recording (has its own back handling in RecordingScreen)
+    BackHandler(currentScreen is RecordingRoute) {
         currentScreen = HomeRoute
     }
 
+    val density = LocalDensity.current
+    val screenWidthPx = with(density) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
+
     with(sharedTransitionScope) {
         Box(modifier = Modifier.fillMaxSize()) {
+            // Show home screen behind during predictive back gesture
+            if (backProgress > 0f && (currentScreen is MeetingDetailRoute || currentScreen is SettingsRoute)) {
+                HomeScreen(
+                    sharedTransitionScope = sharedTransitionScope,
+                    onMeetingClick = {},
+                    onRecordClick = {},
+                    onSettingsClick = {},
+                )
+            }
+
             AnimatedContent(
                 targetState = currentScreen,
                 transitionSpec = {
@@ -136,25 +175,43 @@ fun AppNavigation(
                     )
 
                     is MeetingDetailRoute -> {
-                        val viewModel: MeetingDetailViewModel = hiltViewModel(
-                            creationCallback = { factory: MeetingDetailViewModel.Factory ->
-                                factory.create(screen)
-                            }
-                        )
-                        MeetingDetailScreen(
-                            meetingId = screen.meetingId,
-                            onBackClick = { currentScreen = HomeRoute },
-                            viewModel = viewModel,
-                        )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer(
+                                    translationX = backProgress * screenWidthPx,
+                                ),
+                        ) {
+                            val viewModel: MeetingDetailViewModel = hiltViewModel(
+                                creationCallback = { factory: MeetingDetailViewModel.Factory ->
+                                    factory.create(screen)
+                                }
+                            )
+                            MeetingDetailScreen(
+                                meetingId = screen.meetingId,
+                                onBackClick = { currentScreen = HomeRoute },
+                                viewModel = viewModel,
+                            )
+                        }
                     }
 
-                    is SettingsRoute -> SettingsScreen(
-                        onBackClick = { currentScreen = HomeRoute },
-                        onSignOut = {
-                            authViewModel.logout()
-                            currentScreen = LoginRoute
-                        },
-                    )
+                    is SettingsRoute -> {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer(
+                                    translationX = backProgress * screenWidthPx,
+                                ),
+                        ) {
+                            SettingsScreen(
+                                onBackClick = { currentScreen = HomeRoute },
+                                onSignOut = {
+                                    authViewModel.logout()
+                                    currentScreen = LoginRoute
+                                },
+                            )
+                        }
+                    }
 
                     is RecordingRoute -> RecordingScreen(
                         sharedTransitionScope = sharedTransitionScope,
