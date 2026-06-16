@@ -104,6 +104,8 @@ fun HomeScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
 
     val expanded by viewModel.isFabExpanded.collectAsState()
+    val fabHaptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val scope = rememberCoroutineScope()
 
     // Audio file import picker
     val context = androidx.compose.ui.platform.LocalContext.current
@@ -115,7 +117,6 @@ fun HomeScreen(
 
     Scaffold(
         floatingActionButton = {
-            val fabHaptic = androidx.compose.ui.platform.LocalHapticFeedback.current
             Column(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -258,19 +259,16 @@ fun HomeScreen(
                 )
 
                 val fabScale = remember { Animatable(1f) }
-                val scope = rememberCoroutineScope()
 
                 FloatingActionButton(
                     onClick = {
                         val expanding = !expanded
                         viewModel.toggleFab()
-                        if (expanding) {
-                            scope.launch {
-                                delay(50)
-                                repeat(4) {
-                                    fabHaptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                                    delay(100)
-                                }
+                        scope.launch {
+                            delay(50)
+                            repeat(4) {
+                                fabHaptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                                delay(100)
                             }
                         }
                         scope.launch {
@@ -513,6 +511,13 @@ fun HomeScreen(
                             interactionSource = remember { MutableInteractionSource() }
                         ) {
                             viewModel.collapseFab()
+                            scope.launch {
+                                delay(50)
+                                repeat(4) {
+                                    fabHaptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                                    delay(100)
+                                }
+                            }
                         }
                 )
             }
