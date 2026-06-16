@@ -13,6 +13,7 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -90,7 +91,7 @@ fun AppNavigation(
         }
     }
 
-    var backProgress by remember { mutableStateOf(0f) }
+    val backProgress = remember { Animatable(0f) }
 
     // Predictive back for slide-over screens (detail, settings)
     PredictiveBackHandler(
@@ -98,12 +99,12 @@ fun AppNavigation(
     ) { progress ->
         try {
             progress.collect { backEvent ->
-                backProgress = backEvent.progress
+                backProgress.snapTo(backEvent.progress)
             }
-            backProgress = 0f
+            backProgress.snapTo(0f)
             currentScreen = HomeRoute
         } catch (e: CancellationException) {
-            backProgress = 0f
+            backProgress.animateTo(0f)
             throw e
         }
     }
@@ -118,14 +119,16 @@ fun AppNavigation(
 
     with(sharedTransitionScope) {
         Box(modifier = Modifier.fillMaxSize()) {
-            // Show home screen behind during predictive back gesture
-            if (backProgress > 0f && (currentScreen is MeetingDetailRoute || currentScreen is SettingsRoute)) {
-                HomeScreen(
-                    sharedTransitionScope = sharedTransitionScope,
-                    onMeetingClick = {},
-                    onRecordClick = {},
-                    onSettingsClick = {},
-                )
+            // Pre-compose home screen behind slide-over screens; reveal during predictive back
+            if (currentScreen is MeetingDetailRoute || currentScreen is SettingsRoute) {
+                Box(modifier = Modifier.graphicsLayer(alpha = if (backProgress.value > 0f) 1f else 0f)) {
+                    HomeScreen(
+                        sharedTransitionScope = sharedTransitionScope,
+                        onMeetingClick = {},
+                        onRecordClick = {},
+                        onSettingsClick = {},
+                    )
+                }
             }
 
             AnimatedContent(
@@ -179,7 +182,7 @@ fun AppNavigation(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .graphicsLayer(
-                                    translationX = backProgress * screenWidthPx,
+                                    translationX = backProgress.value * screenWidthPx,
                                 ),
                         ) {
                             val viewModel: MeetingDetailViewModel = hiltViewModel(
@@ -200,7 +203,7 @@ fun AppNavigation(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .graphicsLayer(
-                                    translationX = backProgress * screenWidthPx,
+                                    translationX = backProgress.value * screenWidthPx,
                                 ),
                         ) {
                             SettingsScreen(
