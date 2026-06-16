@@ -31,6 +31,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -68,6 +69,11 @@ private fun slideOverBack(): ContentTransform = ContentTransform(
     sizeTransform = SizeTransform(clip = false),
 )
 
+private val instantSwap = ContentTransform(
+    targetContentEnter = EnterTransition.None,
+    initialContentExit = ExitTransition.None,
+)
+
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun AppNavigation(
@@ -92,6 +98,14 @@ fun AppNavigation(
     }
 
     val backProgress = remember { Animatable(0f) }
+    var gestureNavigation by remember { mutableStateOf(false) }
+
+    // Reset gesture progress when entering a new slide-over screen
+    LaunchedEffect(currentScreen) {
+        if (currentScreen is MeetingDetailRoute || currentScreen is SettingsRoute) {
+            backProgress.snapTo(0f)
+        }
+    }
 
     // Predictive back for slide-over screens (detail, settings)
     PredictiveBackHandler(
@@ -101,7 +115,9 @@ fun AppNavigation(
             progress.collect { backEvent ->
                 backProgress.snapTo(backEvent.progress)
             }
-            backProgress.snapTo(0f)
+            // Animate detail fully off-screen, then swap invisibly
+            backProgress.animateTo(1f, tween(200))
+            gestureNavigation = true
             currentScreen = HomeRoute
         } catch (e: CancellationException) {
             backProgress.animateTo(0f)
@@ -139,17 +155,14 @@ fun AppNavigation(
                         initialState is HomeRoute && targetState is MeetingDetailRoute ->
                             slideOverForward()
 
-                        // Detail → Home: slide over back
-                        initialState is MeetingDetailRoute && targetState is HomeRoute ->
-                            slideOverBack()
+                        // Detail/Settings → Home: skip if gesture already handled it
+                        (initialState is MeetingDetailRoute || initialState is SettingsRoute)
+                                && targetState is HomeRoute ->
+                            if (gestureNavigation) instantSwap else slideOverBack()
 
                         // Home → Settings: slide over forward
                         initialState is HomeRoute && targetState is SettingsRoute ->
                             slideOverForward()
-
-                        // Settings → Home: slide over back
-                        initialState is SettingsRoute && targetState is HomeRoute ->
-                            slideOverBack()
 
                         // All other transitions: simple fade (recording, login, etc.)
                         else -> fastFade
@@ -157,6 +170,7 @@ fun AppNavigation(
                 },
                 label = "app_nav",
             ) { screen ->
+                SideEffect { gestureNavigation = false }
                 when (screen) {
                     is LoginRoute -> LoginScreen(
                         authViewModel = authViewModel,
