@@ -71,6 +71,7 @@ import androidx.compose.foundation.border
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.graphics.Color
@@ -168,6 +169,7 @@ fun HomeScreen(
                             Box(
                                 modifier = Modifier
                                     .size(56.dp)
+                                    .shadow(6.dp, CircleShape)
                                     .clip(CircleShape)
                                     .background(MaterialTheme.colorScheme.secondaryContainer)
                                     .clickable(
@@ -222,6 +224,7 @@ fun HomeScreen(
                                         resizeMode = SharedTransitionScope.ResizeMode.scaleToBounds(),
                                         clipInOverlayDuringTransition = OverlayClip(CircleShape),
                                     )
+                                    .shadow(6.dp, CircleShape)
                                     .clip(CircleShape)
                                     .background(MaterialTheme.colorScheme.error)
                                     .clickable(
