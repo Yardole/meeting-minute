@@ -47,8 +47,10 @@ import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -93,6 +95,7 @@ fun HomeScreen(
     animatedVisibilityScope: AnimatedVisibilityScope,
     onMeetingClick: (String) -> Unit,
     onRecordClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val meetings by viewModel.filteredMeetings.collectAsState()
@@ -308,13 +311,25 @@ fun HomeScreen(
                     detectTapGestures { focusManager.clearFocus() }
                 }
         ) {
-            Text(
-                text = "Oliva",
-                style = MaterialTheme.typography.headlineMedium,
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 24.dp)
-            )
+                    .padding(start = 24.dp, end = 12.dp, top = 24.dp, bottom = 24.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "Oliva",
+                    style = MaterialTheme.typography.headlineMedium,
+                )
+                IconButton(onClick = onSettingsClick) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Settings",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
 
             // Search bar
             var isSearchFocused by remember { mutableStateOf(false) }

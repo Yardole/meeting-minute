@@ -43,6 +43,7 @@ import com.oliva.notes.app.ui.home.HomeScreen
 import com.oliva.notes.app.ui.meetingdetail.MeetingDetailScreen
 import com.oliva.notes.app.ui.meetingdetail.MeetingDetailViewModel
 import com.oliva.notes.app.ui.recording.RecordingScreen
+import com.oliva.notes.app.ui.settings.SettingsScreen
 
 private val fastFade = fadeIn(tween(300)) togetherWith fadeOut(tween(300))
 
@@ -81,8 +82,8 @@ fun AppNavigation(
         }
     }
 
-    // System back: return to home from detail or recording
-    BackHandler(currentScreen is MeetingDetailRoute || currentScreen is RecordingRoute) {
+    // System back: return to home from detail, recording, or settings
+    BackHandler(currentScreen is MeetingDetailRoute || currentScreen is RecordingRoute || currentScreen is SettingsRoute) {
         currentScreen = HomeRoute
     }
 
@@ -98,6 +99,14 @@ fun AppNavigation(
 
                         // Detail → Home: slide over back
                         initialState is MeetingDetailRoute && targetState is HomeRoute ->
+                            slideOverBack()
+
+                        // Home → Settings: slide over forward
+                        initialState is HomeRoute && targetState is SettingsRoute ->
+                            slideOverForward()
+
+                        // Settings → Home: slide over back
+                        initialState is SettingsRoute && targetState is HomeRoute ->
                             slideOverBack()
 
                         // All other transitions: simple fade (recording, login, etc.)
@@ -121,6 +130,9 @@ fun AppNavigation(
                         onRecordClick = {
                             currentScreen = RecordingRoute()
                         },
+                        onSettingsClick = {
+                            currentScreen = SettingsRoute
+                        },
                     )
 
                     is MeetingDetailRoute -> {
@@ -135,6 +147,14 @@ fun AppNavigation(
                             viewModel = viewModel,
                         )
                     }
+
+                    is SettingsRoute -> SettingsScreen(
+                        onBackClick = { currentScreen = HomeRoute },
+                        onSignOut = {
+                            authViewModel.logout()
+                            currentScreen = LoginRoute
+                        },
+                    )
 
                     is RecordingRoute -> RecordingScreen(
                         sharedTransitionScope = sharedTransitionScope,
