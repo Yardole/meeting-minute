@@ -7,7 +7,7 @@ import androidx.activity.compose.PredictiveBackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedContentTransitionScope
+
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -37,7 +37,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
@@ -112,8 +113,21 @@ fun AppNavigation(
         currentScreen = HomeRoute
     }
 
+    val density = LocalDensity.current
+    val screenWidthPx = with(density) { LocalConfiguration.current.screenWidthDp.dp.toPx() }
+
     with(sharedTransitionScope) {
         Box(modifier = Modifier.fillMaxSize()) {
+            // Show home screen behind during predictive back gesture
+            if (backProgress > 0f && (currentScreen is MeetingDetailRoute || currentScreen is SettingsRoute)) {
+                HomeScreen(
+                    sharedTransitionScope = sharedTransitionScope,
+                    onMeetingClick = {},
+                    onRecordClick = {},
+                    onSettingsClick = {},
+                )
+            }
+
             AnimatedContent(
                 targetState = currentScreen,
                 transitionSpec = {
@@ -161,14 +175,11 @@ fun AppNavigation(
                     )
 
                     is MeetingDetailRoute -> {
-                        val scale = 1f - (backProgress * 0.1f)
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .graphicsLayer(
-                                    scaleX = scale,
-                                    scaleY = scale,
-                                    transformOrigin = TransformOrigin.Center,
+                                    translationX = backProgress * screenWidthPx,
                                 ),
                         ) {
                             val viewModel: MeetingDetailViewModel = hiltViewModel(
@@ -185,14 +196,11 @@ fun AppNavigation(
                     }
 
                     is SettingsRoute -> {
-                        val scale = 1f - (backProgress * 0.1f)
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
                                 .graphicsLayer(
-                                    scaleX = scale,
-                                    scaleY = scale,
-                                    transformOrigin = TransformOrigin.Center,
+                                    translationX = backProgress * screenWidthPx,
                                 ),
                         ) {
                             SettingsScreen(
