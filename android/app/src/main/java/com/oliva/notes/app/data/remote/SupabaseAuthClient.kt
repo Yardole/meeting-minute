@@ -28,6 +28,9 @@ class SupabaseAuthClient @Inject constructor(
     val userId: String?
         get() = currentSession?.userId ?: prefs.getString("user_id", null)
 
+    val userEmail: String?
+        get() = prefs.getString("user_email", null)
+
     val isLoggedIn: Boolean
         get() = currentSession != null || prefs.contains("user_id")
 
@@ -67,7 +70,10 @@ class SupabaseAuthClient @Inject constructor(
                         refreshToken = json.getString("refresh_token"),
                     )
                     currentSession = session
-                    prefs.edit { putString("user_id", session.userId) }
+                    prefs.edit {
+                        putString("user_id", session.userId)
+                        putString("user_email", email)
+                    }
                     session
                 } else {
                     val msg = JSONObject(response).optString("msg", response)
@@ -108,7 +114,10 @@ class SupabaseAuthClient @Inject constructor(
                         refreshToken = json.getString("refresh_token"),
                     )
                     currentSession = session
-                    prefs.edit { putString("user_id", session.userId) }
+                    prefs.edit {
+                        putString("user_id", session.userId)
+                        putString("user_email", email)
+                    }
                     session
                 } else {
                     val msg = JSONObject(response).optString("error_description", response)
@@ -133,6 +142,9 @@ class SupabaseAuthClient @Inject constructor(
             }
         }
         currentSession = null
-        prefs.edit { remove("user_id") }
+        prefs.edit {
+            remove("user_id")
+            remove("user_email")
+        }
     }
 }

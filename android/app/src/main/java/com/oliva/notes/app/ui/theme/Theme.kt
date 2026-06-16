@@ -42,9 +42,14 @@ private val DarkColors = darkColorScheme(
 
 @Composable
 fun MeetingMinuteTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    themeMode: com.oliva.notes.app.data.preferences.ThemeMode = com.oliva.notes.app.data.preferences.ThemeMode.SYSTEM,
     content: @Composable () -> Unit,
 ) {
+    val darkTheme = when (themeMode) {
+        com.oliva.notes.app.data.preferences.ThemeMode.LIGHT -> false
+        com.oliva.notes.app.data.preferences.ThemeMode.DARK -> true
+        com.oliva.notes.app.data.preferences.ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    }
     MaterialTheme(
         colorScheme = if (darkTheme) DarkColors else LightColors,
         typography = AppTypography,

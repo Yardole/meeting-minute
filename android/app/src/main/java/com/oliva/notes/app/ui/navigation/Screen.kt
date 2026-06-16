@@ -14,3 +14,6 @@ data class RecordingRoute(val sessionId: Long = System.nanoTime()) : NavKey
 
 @Serializable
 data class MeetingDetailRoute(val meetingId: String) : NavKey
+
+@Serializable
+data object SettingsRoute : NavKey

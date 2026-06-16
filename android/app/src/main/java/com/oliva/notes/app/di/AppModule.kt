@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.oliva.notes.app.data.audio.AudioPlayer
 import com.oliva.notes.app.data.local.MeetingMinuteDatabase
+import com.oliva.notes.app.data.preferences.ThemePreferences
 import com.oliva.notes.app.data.remote.SupabaseAuthClient
 import com.oliva.notes.app.data.remote.SupabaseClientProvider
 import com.oliva.notes.app.data.remote.SupabaseConfig
@@ -80,4 +81,10 @@ object AppModule {
         database: MeetingMinuteDatabase,
         edgeFunctionClient: SupabaseEdgeFunctionClient
     ): SyncManager = SyncManager(database, edgeFunctionClient)
+
+    @Provides
+    @Singleton
+    fun provideThemePreferences(
+        @ApplicationContext context: Context
+    ): ThemePreferences = ThemePreferences(context)
 }
