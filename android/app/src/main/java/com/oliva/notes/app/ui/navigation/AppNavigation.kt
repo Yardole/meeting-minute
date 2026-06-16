@@ -11,6 +11,7 @@ import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -49,14 +50,16 @@ private val fastFade = fadeIn(tween(300)) togetherWith fadeOut(tween(300))
 
 private fun slideOverForward(): ContentTransform = ContentTransform(
     targetContentEnter = slideInHorizontally(tween<IntOffset>(400)) { it },
-    initialContentExit = ExitTransition.None,
+    initialContentExit = fadeOut(tween(400), targetAlpha = 0.99f),
     targetContentZIndex = 1f,
+    sizeTransform = SizeTransform(clip = false),
 )
 
 private fun slideOverBack(): ContentTransform = ContentTransform(
     targetContentEnter = EnterTransition.None,
     initialContentExit = slideOutHorizontally(tween<IntOffset>(400)) { it },
     targetContentZIndex = -1f,
+    sizeTransform = SizeTransform(clip = false),
 )
 
 @OptIn(ExperimentalSharedTransitionApi::class)
