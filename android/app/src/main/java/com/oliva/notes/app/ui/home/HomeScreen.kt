@@ -547,7 +547,11 @@ private fun MeetingListItem(
     var deleted by remember { mutableStateOf(false) }
     var passedThreshold by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxWidth()) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+    ) {
         // Red delete background — revealed as you swipe
         Box(
             modifier = Modifier
