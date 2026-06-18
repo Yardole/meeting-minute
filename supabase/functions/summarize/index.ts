@@ -131,7 +131,7 @@ You must respond with a JSON object in this exact format:
     if (meeting?.user_id) {
       await sendPush(supabase, meeting.user_id, {
         title: 'Meeting ready',
-        body: `"${title}" is ready to view.`,
+        body: `Your meeting about "${title}" is ready. Tap to view.`,
         meetingId,
       })
     }
