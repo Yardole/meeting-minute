@@ -13,6 +13,9 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.oliva.notes.app.data.local.MeetingMinuteDatabase
 import com.oliva.notes.app.data.local.entity.MeetingStatus
 import com.oliva.notes.app.data.sync.SyncManager
@@ -37,6 +40,16 @@ class MeetingProcessingService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
 
+    private var lastStatus: String = "Preparing…"
+    private var lastProgress: Float = 0f
+
+    private val lifecycleObserver = object : DefaultLifecycleObserver {
+        override fun onStop(owner: LifecycleOwner) {
+            notificationManager.cancel(NOTIFICATION_ID)
+            notificationManager.notify(NOTIFICATION_ID, buildNotification(lastStatus, lastProgress))
+        }
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -52,6 +65,8 @@ class MeetingProcessingService : Service() {
             buildNotification("Preparing…", 0f),
             ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
         )
+
+        ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleObserver)
 
         serviceScope.launch {
             runPipeline(meetingId)
@@ -130,6 +145,8 @@ class MeetingProcessingService : Service() {
     }
 
     private fun updateNotification(status: String, progress: Float) {
+        lastStatus = status
+        lastProgress = progress
         notificationManager.notify(NOTIFICATION_ID, buildNotification(status, progress))
     }
 
@@ -140,7 +157,7 @@ class MeetingProcessingService : Service() {
             .setContentText(status)
             .setOngoing(true)
             .setProgress(100, (progress * 100).toInt(), false)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
 
         if (Build.VERSION.SDK_INT >= 36) {
             builder.extras.putBoolean("android.requestPromotedOngoing", true)
@@ -151,13 +168,15 @@ class MeetingProcessingService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        ProcessLifecycleOwner.get().lifecycle.removeObserver(lifecycleObserver)
         serviceScope.cancel()
         notificationManager.cancel(NOTIFICATION_ID)
     }
 
     companion object {
         private const val TAG = "ProcessingService"
-        const val CHANNEL_ID = "meeting_processing"
+        private const val LEGACY_CHANNEL_ID = "meeting_processing"
+        const val CHANNEL_ID = "meeting_processing_v2"
         private const val NOTIFICATION_ID = 2001
         private const val EXTRA_MEETING_ID = "meeting_id"
 
@@ -169,16 +188,18 @@ class MeetingProcessingService : Service() {
         }
 
         fun createChannel(context: Context) {
+            val nm = context.getSystemService(NotificationManager::class.java)
+            nm.deleteNotificationChannel(LEGACY_CHANNEL_ID)
+
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "Meeting processing",
-                NotificationManager.IMPORTANCE_DEFAULT
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "Shows progress while your meeting is being processed"
                 setSound(null, null)
             }
-            context.getSystemService(NotificationManager::class.java)
-                .createNotificationChannel(channel)
+            nm.createNotificationChannel(channel)
         }
     }
 }
