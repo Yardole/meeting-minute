@@ -82,7 +82,6 @@ import com.oliva.notes.app.domain.model.Meeting
 import com.oliva.notes.app.domain.model.Speaker
 import com.oliva.notes.app.domain.model.TranscriptSegment
 import com.oliva.notes.app.ui.components.BottomPlayer
-import com.oliva.notes.app.ui.components.EdgeScrollHaptics
 import com.oliva.notes.app.ui.components.ShareSheet
 import java.util.UUID
 
@@ -416,8 +415,6 @@ private fun MinutesTab(
 ) {
     if (summary != null) {
         val listState = rememberLazyListState()
-        val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-        EdgeScrollHaptics(listState, haptic)
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
@@ -653,8 +650,6 @@ private fun TranscriptTab(
     }
 
     val listState = rememberLazyListState()
-    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-    EdgeScrollHaptics(listState, haptic)
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
@@ -732,7 +727,6 @@ private fun ChatTab(
 
         // Message area
         val listState = rememberLazyListState()
-        EdgeScrollHaptics(listState, haptic)
 
         LaunchedEffect(messages.size) {
             if (messages.isNotEmpty()) {
