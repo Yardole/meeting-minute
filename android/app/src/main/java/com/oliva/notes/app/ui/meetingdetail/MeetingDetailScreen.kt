@@ -36,6 +36,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import com.oliva.notes.app.ui.components.rememberSlowerFlingBehavior
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -420,6 +421,7 @@ private fun MinutesTab(
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
+            flingBehavior = rememberSlowerFlingBehavior(),
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
@@ -656,6 +658,7 @@ private fun TranscriptTab(
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
+        flingBehavior = rememberSlowerFlingBehavior(),
         contentPadding = PaddingValues(
             start = 16.dp,
             end = 16.dp,
@@ -746,6 +749,7 @@ private fun ChatTab(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp),
+            flingBehavior = rememberSlowerFlingBehavior(),
             contentPadding = PaddingValues(
                 top = 12.dp,
                 bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 88.dp
