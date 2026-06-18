@@ -33,7 +33,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import com.oliva.notes.app.ui.components.EdgeScrollHaptics
+import com.oliva.notes.app.ui.components.rememberSlowerFlingBehavior
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -425,8 +425,6 @@ fun HomeScreen(
             }
 
             val listState = rememberLazyListState()
-            val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-            EdgeScrollHaptics(listState, haptic)
 
             val isRefreshing by viewModel.isRefreshing.collectAsState()
             val pullRefreshState = rememberPullRefreshState(
@@ -476,6 +474,7 @@ fun HomeScreen(
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
+                        flingBehavior = rememberSlowerFlingBehavior(),
                         contentPadding = PaddingValues(
                             start = 16.dp,
                             end = 16.dp,

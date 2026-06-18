@@ -36,6 +36,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import com.oliva.notes.app.ui.components.rememberSlowerFlingBehavior
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -81,7 +82,6 @@ import com.oliva.notes.app.domain.model.Meeting
 import com.oliva.notes.app.domain.model.Speaker
 import com.oliva.notes.app.domain.model.TranscriptSegment
 import com.oliva.notes.app.ui.components.BottomPlayer
-import com.oliva.notes.app.ui.components.EdgeScrollHaptics
 import com.oliva.notes.app.ui.components.ShareSheet
 import java.util.UUID
 
@@ -415,11 +415,10 @@ private fun MinutesTab(
 ) {
     if (summary != null) {
         val listState = rememberLazyListState()
-        val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-        EdgeScrollHaptics(listState, haptic)
         LazyColumn(
             state = listState,
             modifier = Modifier.fillMaxSize(),
+            flingBehavior = rememberSlowerFlingBehavior(),
             contentPadding = PaddingValues(
                 start = 16.dp,
                 end = 16.dp,
@@ -651,11 +650,10 @@ private fun TranscriptTab(
     }
 
     val listState = rememberLazyListState()
-    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
-    EdgeScrollHaptics(listState, haptic)
     LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
+        flingBehavior = rememberSlowerFlingBehavior(),
         contentPadding = PaddingValues(
             start = 16.dp,
             end = 16.dp,
@@ -729,7 +727,6 @@ private fun ChatTab(
 
         // Message area
         val listState = rememberLazyListState()
-        EdgeScrollHaptics(listState, haptic)
 
         LaunchedEffect(messages.size) {
             if (messages.isNotEmpty()) {
@@ -746,6 +743,7 @@ private fun ChatTab(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 16.dp),
+            flingBehavior = rememberSlowerFlingBehavior(),
             contentPadding = PaddingValues(
                 top = 12.dp,
                 bottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding() + 88.dp
