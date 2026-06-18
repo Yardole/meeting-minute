@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.StateFlow
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.oliva.notes.app.ui.auth.AuthViewModel
 import com.oliva.notes.app.ui.auth.LoginScreen
@@ -79,17 +80,28 @@ private val instantSwap = ContentTransform(
 fun AppNavigation(
     sharedTransitionScope: SharedTransitionScope,
     authViewModel: AuthViewModel,
+    pendingMeetingId: StateFlow<String?> = kotlinx.coroutines.flow.MutableStateFlow(null),
+    onMeetingIdConsumed: () -> Unit = {},
 ) {
     val authState by authViewModel.state.collectAsState()
     var currentScreen by remember { mutableStateOf<Any>(LoginRoute) }
+
+    val meetingIdToOpen by pendingMeetingId.collectAsState()
+    LaunchedEffect(meetingIdToOpen, authState.isLoggedIn) {
+        val id = meetingIdToOpen ?: return@LaunchedEffect
+        if (authState.isLoggedIn) {
+            currentScreen = MeetingDetailRoute(id)
+            onMeetingIdConsumed()
+        }
+    }
 
     val notificationPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { /* result handled by the OS */ }
 
-    // Navigate to home when logged in
+    // Navigate to home when logged in (skip if a pending meeting ID will handle navigation)
     LaunchedEffect(authState.isLoggedIn) {
-        if (authState.isLoggedIn && currentScreen !is HomeRoute) {
+        if (authState.isLoggedIn && currentScreen !is HomeRoute && meetingIdToOpen == null) {
             currentScreen = HomeRoute
         }
         if (authState.isLoggedIn && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

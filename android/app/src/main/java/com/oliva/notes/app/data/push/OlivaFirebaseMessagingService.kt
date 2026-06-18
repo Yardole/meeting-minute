@@ -32,6 +32,7 @@ class OlivaFirebaseMessagingService : FirebaseMessagingService() {
         private const val TAG = "OlivaFCM"
         const val CHANNEL_ID = "oliva_meeting_updates"
         const val CHANNEL_NAME = "Meeting updates"
+        const val EXTRA_MEETING_ID = "extra_meeting_id"
 
         fun createNotificationChannel(context: Context) {
             val channel = NotificationChannel(
@@ -65,11 +66,13 @@ class OlivaFirebaseMessagingService : FirebaseMessagingService() {
 
     private fun showNotification(title: String, body: String, meetingId: String?) {
         val intent = Intent(this, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            meetingId?.let { putExtra(EXTRA_MEETING_ID, it) }
         }
+        val requestCode = meetingId?.hashCode() ?: System.currentTimeMillis().toInt()
         val pendingIntent = PendingIntent.getActivity(
             this,
-            0,
+            requestCode,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
