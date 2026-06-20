@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.oliva.notes.app.data.preferences.ThemeMode
+import com.oliva.notes.app.ui.theme.WarmOlive
 
 @Composable
 fun SettingsScreen(
@@ -60,6 +61,7 @@ fun SettingsScreen(
 
     var showThemeDialog by remember { mutableStateOf(false) }
     var showLanguageDialog by remember { mutableStateOf(false) }
+    var showSignOutDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showDeleteConfirmed by remember { mutableStateOf(false) }
 
@@ -139,7 +141,7 @@ fun SettingsScreen(
                 CardDivider()
                 SettingsRow(
                     label = "Sign out",
-                    onClick = onSignOut,
+                    onClick = { showSignOutDialog = true },
                 )
             }
 
@@ -220,6 +222,33 @@ fun SettingsScreen(
         }
     }
 
+    // Sign out confirmation dialog
+    if (showSignOutDialog) {
+        EditorialDialog(
+            onDismissRequest = { showSignOutDialog = false },
+            title = "Sign out?",
+            confirmButton = {
+                TextButton(onClick = {
+                    showSignOutDialog = false
+                    onSignOut()
+                }) {
+                    Text("Sign out")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSignOutDialog = false }) {
+                    Text("Cancel")
+                }
+            },
+        ) {
+            Text(
+                "You'll need to sign in again to access your meetings.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+
     // Delete account confirmation dialog
     if (showDeleteDialog) {
         EditorialDialog(
@@ -280,6 +309,11 @@ private fun EditorialDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
+        modifier = Modifier.border(
+            width = 1.dp,
+            color = WarmOlive,
+            shape = RoundedCornerShape(20.dp),
+        ),
         shape = RoundedCornerShape(20.dp),
         containerColor = MaterialTheme.colorScheme.surface,
         title = {
