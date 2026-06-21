@@ -81,6 +81,7 @@ import com.oliva.notes.app.data.local.entity.ChatRole
 import com.oliva.notes.app.domain.model.Meeting
 import com.oliva.notes.app.domain.model.Speaker
 import com.oliva.notes.app.domain.model.TranscriptSegment
+import com.oliva.notes.app.ui.components.BackButtonChip
 import com.oliva.notes.app.ui.components.BottomPlayer
 import com.oliva.notes.app.ui.components.ShareSheet
 import java.util.UUID
@@ -174,24 +175,7 @@ fun MeetingDetailScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MaterialTheme.colorScheme.secondaryContainer)
-                        .clickable {
-                            haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
-                            onBackClick()
-                        }
-                        .padding(horizontal = 14.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = "← Back",
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            fontSize = 13.sp
-                        )
-                    )
-                }
+                BackButtonChip(onClick = onBackClick)
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
