@@ -161,6 +161,7 @@ fun AppNavigation(
 
             AnimatedContent(
                 targetState = currentScreen,
+                modifier = Modifier.fillMaxSize(),
                 transitionSpec = {
                     when {
                         // Home → Detail: slide over forward
