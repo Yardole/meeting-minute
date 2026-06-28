@@ -1,5 +1,15 @@
 # Progress Log
 
+## Known TODOs / Follow-ups
+
+- [ ] **Resumable (TUS) uploads — DEFERRED, must revisit.** Current audio upload is a single streamed PUT to Supabase Storage. If it drops mid-upload it restarts from zero. Deferred because audio is now compressed to ~32kbps mono (uploads are small, so single PUT is reliable enough). Come back and add TUS resumable uploads before a wider launch, or sooner if large uploads fail in practice. Context: 2026-06-28 audio-compression work (see `.claude/memory/CHU-audio-compression-50mb-cap.md`).
+
+## 2026-06-28
+
+### Done
+
+- [x] **Fixed OOM crash-loop on large audio upload.** A 1h57m (~110MB) imported file crashed the app on every launch via `OutOfMemoryError` — `SupabaseStorageClient` base64-encoded the whole file in memory and the upload auto-retried on launch. Fix: (1) stream uploads directly to Supabase Storage REST (no base64, flat memory); (2) compress audio to 16kHz mono ~32kbps AAC so files fit Supabase free-tier's hard 50MB cap — recorder set low at source + imports transcoded via MediaCodec when over threshold.
+
 ## 2026-06-09
 
 ### Done since 2026-06-08
