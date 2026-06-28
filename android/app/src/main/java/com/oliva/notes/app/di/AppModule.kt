@@ -2,6 +2,7 @@ package com.oliva.notes.app.di
 
 import android.content.Context
 import androidx.room.Room
+import com.oliva.notes.app.data.audio.AudioCompressor
 import com.oliva.notes.app.data.audio.AudioPlayer
 import com.oliva.notes.app.data.local.MeetingMinuteDatabase
 import com.oliva.notes.app.data.preferences.ThemePreferences
@@ -60,8 +61,9 @@ object AppModule {
     @Provides
     @Singleton
     fun provideSupabaseStorageClient(
-        edgeFunctionClient: SupabaseEdgeFunctionClient
-    ): SupabaseStorageClient = SupabaseStorageClient(edgeFunctionClient)
+        config: SupabaseConfig,
+        audioCompressor: AudioCompressor,
+    ): SupabaseStorageClient = SupabaseStorageClient(config, audioCompressor)
 
     @Provides
     @Singleton

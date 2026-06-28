@@ -35,6 +35,13 @@ class AudioRecorder @Inject constructor(
             setAudioSource(MediaRecorder.AudioSource.MIC)
             setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
             setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
+            // Speech-optimized, low-footprint settings so recordings stay well under
+            // Supabase free-tier's 50MB upload cap (~14MB/hr). Mono 16kHz @ 32kbps is
+            // telephony-grade — ideal for AssemblyAI transcription, no perceptible loss
+            // for speech. See AudioTranscoder for the matching import path.
+            setAudioChannels(1)
+            setAudioSamplingRate(16_000)
+            setAudioEncodingBitRate(32_000)
             setOutputFile(outputFile!!.absolutePath)
             prepare()
             start()

@@ -66,11 +66,25 @@ class MeetingProcessingService : Service() {
             ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC,
         )
 
+        // Guard against duplicate processing: processPendingMeetings() fires from
+        // both HomeViewModel and the repository's connectivity observer on launch,
+        // so the same meeting can be started twice. Without this, two concurrent
+        // pipelines run — doubling the (now expensive) transcode, contending for
+        // the AAC codec, and racing the transcribe step's delete+insert.
+        if (!activeMeetings.add(meetingId)) {
+            Log.d(TAG, "Already processing $meetingId, skipping duplicate start")
+            return START_NOT_STICKY
+        }
+
         ProcessLifecycleOwner.get().lifecycle.addObserver(lifecycleObserver)
 
         serviceScope.launch {
-            runPipeline(meetingId)
-            stopSelf()
+            try {
+                runPipeline(meetingId)
+            } finally {
+                activeMeetings.remove(meetingId)
+                stopSelf()
+            }
         }
 
         return START_NOT_STICKY
@@ -179,6 +193,11 @@ class MeetingProcessingService : Service() {
         const val CHANNEL_ID = "meeting_processing_v2"
         private const val NOTIFICATION_ID = 2001
         private const val EXTRA_MEETING_ID = "meeting_id"
+
+        // Meeting IDs with a pipeline currently in flight (shared across the
+        // single service instance's onStartCommand calls).
+        private val activeMeetings =
+            java.util.Collections.synchronizedSet(mutableSetOf<UUID>())
 
         fun start(context: Context, meetingId: UUID) {
             val intent = Intent(context, MeetingProcessingService::class.java).apply {
